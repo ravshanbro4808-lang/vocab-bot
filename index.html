@@ -768,6 +768,7 @@ const wlOpts=(v)=>[['',"— qiyinlik (ixtiyoriy) —"],['b',"Boshlang'ich"],['o'
 S.bf=S.bf||'';
 const bkOk=x=>!S.bf||x.lvl===S.bf||x.lvl==='all';
 const bkChips=d=>d.some(x=>x.lvl)?`<div class=posch>${[['','Hammasi'],['b',"Boshlang'ich"],['o',"O'rta"],['y','Yuqori']].map(c=>`<button class="b ${S.bf==c[0]?'sel':'g'}" onclick="S.bf='${c[0]}';home()">${c[1]}</button>`).join('')}</div>`:'';
+const GR=[['#0e7c6b','#2fb59f'],['#2d5f8b','#4f93c9'],['#b9562b','#e88a5c'],['#6c4a8f','#9a73c4'],['#4b7a2e','#7cb55a'],['#a97c10','#e0b23f']];
 function book(x,i){const g=GR[i%GR.length];return `<div class=book style="background:linear-gradient(145deg,${g[0]},${g[1]})" onclick="${x.ok?`nav(openDict,${x.id})`:'sheet()'}"><h3>${esc(x.name)}</h3><small>${x.free?'Bepul':"Lug'at"}</small><span class=pill2>${x.ok?'✓':'🔒'} ${x.levels} daraja</span><i class=gh>${esc([...String(x.name)][0])}</i></div>`}
 async function home(){S.admOpen=null;head('');const [d,st]=await Promise.all([api('/dicts'),api('/stats')]);me=await api('/me');
  const lv=Math.floor(st.learned/50)+1,pr=Math.round((st.learned%50)/50*100);
