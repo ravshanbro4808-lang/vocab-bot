@@ -1527,4 +1527,37 @@ function gMatch(b,side,id){const g=S.gg;if(b.classList.contains('dn'))return;
 function gramEnd(){const g=S.gg,tot=g.mode=='match'?g.qs.reduce((s,q)=>s+q.pairs.length,0):g.qs.length,pts=Math.min(g.score*2,60);api('/score',{body:{points:pts}}).catch(()=>{});confetti();
  const wr=[...new Map(g.wrong.map(x=>[x.id,x])).values()];
  H(`${mas(g.score>=tot*.8?'Barakalla! 🎉':"Yaxshi urinish! Xatolarni qayta ko'rib chiqing 💪")}<div class=sticker>🏆 ${g.score} / ${tot}<small>+${pts} ball</small></div>${wr.length?`<h3 class=sec style="font-size:18px">Qayta ko'ring</h3>`+wr.map(x=>`<div class=card onclick="nav(gramView,${x.id})"><div><b>${esc(x.p)}</b><br><small>${esc(x.m)}</small></div><i>›</i></div>`).join(''):''}<div class=row><button class=nxt onclick="gramGame('${g.mode}'${g.only!=null?','+g.only:''})">🔁 Qayta o'ynash</button></div><div class=row><button class="b g" onclick="back()">← Grammatika</button></div>`)}
-</script></body></html>
+</script><style id="ui2">
+html{scroll-behavior:smooth}
+body :is(button,.b,.nxt,.big2,.pill,.lrn,.gold,.bkb,.chp,.lv,.send,.backpill,.vcall,.opt2,.chip,.cta button):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){border-radius:999px!important;transition:transform .2s cubic-bezier(.3,1.5,.5,1),box-shadow .25s,filter .2s,background-color .2s!important;-webkit-tap-highlight-color:transparent}
+body :is(.cb,.mic2):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){border-radius:50%!important;transition:transform .2s cubic-bezier(.3,1.5,.5,1),box-shadow .25s!important}
+body :is(.b,.nxt,.big2,.pill,.lrn,.gold,.backpill,.cta button,.send):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){position:relative;overflow:hidden}
+body :is(.nxt,.big2,.b:not(.g):not(.sel)):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){box-shadow:0 10px 24px -8px color-mix(in srgb,var(--pri,#7b5cff) 65%,transparent)!important}
+body :is(.card,.hero,.sticker,.stats>div):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){border-radius:28px!important}
+body :is(.book,.tile,.gl):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){border-radius:30px!important;transition:transform .25s cubic-bezier(.3,1.4,.5,1),filter .2s!important}
+body .dk:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){border-radius:30px!important;background:none!important;border:0!important;box-shadow:none!important}
+body .dk i:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){border-radius:50%!important;transition:transform .28s cubic-bezier(.3,1.7,.5,1),box-shadow .25s!important;box-shadow:0 8px 18px -6px #0006!important}
+body :is(.card[onclick],.book,.tile,.gl):active:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){transform:scale(.97)!important}
+body :is(button,.b,.nxt,.big2,.pill,.lrn,.gold,.bkb,.chp,.lv,.send,.backpill,.vcall,.opt2,.chip,.cta button,.cb,.mic2):active:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){transform:scale(.93)!important;filter:brightness(.96)}
+body .dk:active i:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){transform:scale(.86) rotate(-5deg)!important}
+@media(hover:hover){
+body :is(button,.b,.nxt,.big2,.pill,.lrn,.gold,.bkb,.chp,.lv,.send,.backpill,.vcall,.opt2,.chip,.cta button):hover:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){transform:translateY(-2px);filter:brightness(1.07)}
+body :is(.cb,.mic2):hover:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){transform:scale(1.1) rotate(-3deg)}
+body :is(.book,.tile,.gl,.card[onclick]):hover:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){transform:translateY(-4px) scale(1.015)}
+body .dk:hover i:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){transform:translateY(-4px) scale(1.08)}}
+html.rm *,html.rm *::before,html.rm *::after{transition:none!important}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<script>
+(function(){const m=document.getElementById('m');if(!m)return;
+const rm=()=>document.documentElement.classList.contains('rm')||(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches);
+const pop=(el,i)=>{try{el.animate([{opacity:0,transform:'translateY(18px) scale(.96)'},{opacity:1,transform:'none'}],{duration:460,delay:Math.min(i,10)*45,easing:'cubic-bezier(.2,.8,.2,1)',fill:'backwards'})}catch(e){}};
+new MutationObserver(ms=>{if(rm())return;let i=0;for(const r of ms)for(const n of r.addedNodes)if(n.nodeType===1&&n.parentNode===m)pop(n,i++);
+ m.querySelectorAll('.grid>*:not([data-a])').forEach((n,k)=>{n.dataset.a=1;pop(n,k+2)})}).observe(m,{childList:true});
+document.addEventListener('pointerdown',e=>{if(rm())return;const b=e.target.closest&&e.target.closest('.b,.nxt,.big2,.pill,.lrn,.gold,.backpill,.cta button,.send');if(!b)return;
+ const r=b.getBoundingClientRect(),s=Math.max(r.width,r.height)*2.2,d=document.createElement('span');
+ d.style.cssText='position:absolute;left:'+(e.clientX-r.left-s/2)+'px;top:'+(e.clientY-r.top-s/2)+'px;width:'+s+'px;height:'+s+'px;border-radius:50%;background:currentColor;pointer-events:none;opacity:0';
+ b.appendChild(d);d.animate([{transform:'scale(0)',opacity:.3},{transform:'scale(1)',opacity:0}],{duration:580,easing:'ease-out'}).onfinish=()=>d.remove()},{passive:true});
+})();
+</script>
+</body></html>
