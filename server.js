@@ -405,18 +405,18 @@ const SENT=[{ko:"저는 매일 한국어를 공부해요",uz:"Men har kuni korey
 app.get('/api/grammar',(r,s)=>{const t=r.query.type,n=Math.min(+r.query.n||8,12);
   if(t==='sent')return s.json(shuffle(SENT).slice(0,n));const a=GRAM[t];if(!a)return s.status(400).json({e:'bad'});
   s.json(shuffle(a).slice(0,n).map(g=>({q:g.q,h:g.h,o:shuffle(g.o),a:g.a})))});
-const foxUse={},FOXSYS="Sen Kori — do'stona va bilimdon tulki yordamchisan 🦊. O'zbek tilida (lotin yozuvida) javob ber. Foydalanuvchi har qanday savol bersa (koreys tili, ta'lim, dasturlash, kundalik hayot va h.k.) to'liq, aniq va foydali javob ber: oddiy savolga qisqa, murakkabiga batafsilroq. Koreys so'zlarini hangul bilan yoz va o'qilishini lotinda qavs ichida ko'rsat. Mashq so'ralsa, bitta savol ber va javobni kut. Tibbiy, huquqiy yoki xavfli mavzularda ehtiyotkor bo'l.";
+const foxUse={},FOXSYS="Sen Kori — «Tillar lug'ati» botining do'stona va bilimdon tulki yordamchisan 🦊. O'zbek tilida (lotin yozuvida) javob ber. Foydalanuvchi har qanday til (ingliz, koreys, yapon, xitoy, rus, nemis va boshqalar) bo'yicha yoki boshqa mavzuda savol bersa, to'liq, aniq va foydali javob ber: oddiy savolga qisqa, murakkabiga batafsilroq. Chet tildagi so'zlarni o'z yozuvida yoz va kerak bo'lsa o'qilishini lotinda qavs ichida ko'rsat. Mashq so'ralsa, bitta savol ber va javobni kut. Tibbiy, huquqiy yoki xavfli mavzularda ehtiyotkor bo'l.";
 function fallbackFox(ms){
   const last=String(ms[ms.length-1].content).trim(),prev=ms.length>1?String(ms[ms.length-2].content):'';
   const qm=prev.match(/^🧠 «(.+?)» nima degani\?/);
   if(qm){const w=one('select * from words where ko=? limit 1',qm[1]);if(w){const first=w.uz.split(/[,;]/)[0].trim().toLowerCase(),ok=last.toLowerCase().includes(first);
     return {lite:1,reply:(ok?'Ajoyib! 🎉 ':'Deyarli! ')+'«'+w.ko+'» — '+w.uz+".\n\nYana mashq qilamizmi? «Meni sina» deb yozing."}}}
   if(/sina/i.test(last)){const w=one('select * from words order by random() limit 1');if(w)return {lite:1,reply:'🧠 «'+w.ko+'» nima degani?'}}
-  let rows=[];const hang=last.match(/[가-힣]+/g);
+  let rows=[];const hang=last.match(/\p{L}{2,}/gu);
   if(hang)for(const h of hang.slice(0,3))rows.push(...q('select ko,uz from words where ko like ? limit 3','%'+h+'%'));
   if(!rows.length){const t=last.replace(/[^\p{L}' ]/gu,'').trim().toLowerCase();if(t.length>=2)rows=q('select ko,uz from words where lower(uz) like ? limit 5','%'+t+'%')}
   if(rows.length)return {lite:1,reply:rows.slice(0,5).map(w=>'📖 '+w.ko+' — '+w.uz).join('\n')};
-  return {lite:1,reply:"Men hozircha lug'atdagi so'zlarni topib bera olaman 🦊 Koreyscha yoki o'zbekcha so'z yozing (masalan: 학교 yoki maktab) yoki «Meni sina» deb yozing."}}
+  return {lite:1,reply:"Men hozircha lug'atdagi so'zlarni topib bera olaman 🦊 Istalgan tildagi yoki o'zbekcha so'z yozing (masalan: school yoki maktab) yoki «Meni sina» deb yozing."}}
 async function askFox(messages,words){
   if(!AI_KEY)return messages.length?fallbackFox(messages):{e:'bad'};
   const ms=messages.slice(-8).map(m=>({role:m.role==='assistant'?'assistant':'user',content:String(m.content).slice(0,1500)}));
@@ -928,8 +928,11 @@ async function runBookJob(job,F,P){try{const items=await extract(F,P.pos,P.auto,
   if(!d){const id=run('insert into dicts(name,levels,sec,lvl) values(?,?,?,?)',P.name,L,30,P.lvl).lastInsertRowid;d=one('select * from dicts where id=?',id);job.dict_id=id}
   job.wlvl=P.lvl==='all'?'':P.lvl;
   await addWords(job,d,items,levelOf,P.auto)}catch(e){job.err=String(e.message||e)}finally{job.fin=true;rmF(F)}}
-async function runMBookJob(job,F,P){try{job.ml={langs:P.langs};const items=await extract(F,'',false,job);if(!items)return void(job.err=rdErr(job));
+async function runMBookJob(job,F,P){try{const sel=(P.cefr&&P.cefr.length)?P.cefr:CEFR;job.ml={langs:P.langs,cefr:sel};let items=await extract(F,'',false,job);if(!items)return void(job.err=rdErr(job));
   if(!items.length)return void(job.err=job.aiErr||job.readErr||"Fayldan tanlangan tillardagi so'z topilmadi");
+  items.forEach(it=>{if(!CEFR.includes(it.cefr))it.cefr='A1'});const all=items.length;items=items.filter(it=>sel.includes(it.cefr));
+  if(!items.length)return void(job.err="Fayldan "+all+" ta so'z topildi, lekin ular tanlangan darajalarga ("+sel.join(', ')+") to'g'ri kelmadi. Boshqa darajalarni ham belgilab qayta urinib ko'ring.");
+  job.lvlSkip=all-items.length;
   let d=job.dict_id&&one('select * from dicts where id=? and deleted=0',job.dict_id);
   if(!d){const id=run('insert into dicts(name,levels,sec,lvl,langs) values(?,?,?,?,?)',P.name,6,30,'',JSON.stringify(P.langs)).lastInsertRowid;CEFR.forEach((n,i)=>run('insert or replace into lvnames(dict_id,level,name) values(?,?,?)',id,i+1,n));d=one('select * from dicts where id=?',id);job.dict_id=id}
   await addWords(job,d,items,(i,n,it)=>Math.max(1,CEFR.indexOf(it&&it.cefr)+1),false)}catch(e){job.err=String(e.message||e)}finally{job.fin=true;rmF(F)}}
@@ -942,7 +945,8 @@ app.post('/api/admin/mbook',adm('import'),upBig.single('file'),(r,s)=>{
   const b=r.body,name=(b.name||'').trim();let langs=[];try{langs=JSON.parse(b.langs||'[]')}catch{}langs=[...new Set(langs)].filter(c=>LANGM[c]);
   if(!name)return s.json({e:"Kitob nomi kelmadi"});if(!langs.length)return s.json({e:"Kamida bitta til tanlang"});
   const F=pickFile(r);if(!F||F.bad)return s.json({e:(F&&F.bad)||"Fayl serverga yetib bormadi"});
-  const job=newJob();job.ml={langs};s.json({job:job.id});startJob(job,F,{kind:'mbook',name,langs})});
+  let cf=[];try{cf=JSON.parse(b.cefr||'[]')}catch{}cf=[...new Set(cf)].filter(c=>CEFR.includes(c));if(!cf.length)cf=CEFR.slice();
+  const job=newJob();job.ml={langs,cefr:cf};s.json({job:job.id});startJob(job,F,{kind:'mbook',name,langs,cefr:cf})});
 app.post('/api/admin/book',adm('import'),upBig.single('file'),(r,s)=>{
   const b=r.body,name=(b.name||'').trim(),pos=b.pos||'ot',lvl=LVL(b.lvl),L=Math.max(1,Math.min(+b.levels||1,30));
   if(!name)return s.json({e:"Kitob nomi kelmadi"});const F=pickFile(r);if(!F||F.bad)return s.json({e:(F&&F.bad)||"Fayl serverga yetib bormadi"});
@@ -1040,7 +1044,7 @@ io.on('connection',sock=>{
 let bot;const hist={};
 if(BOT_TOKEN){bot=new Telegraf(BOT_TOKEN);
   const open=Markup.button.webApp("📚 Ilovani ochish",WEBAPP_URL);
-  bot.start(c=>c.reply("Assalomu alaykum, "+c.from.first_name+"! 🦊\nMen Kori — koreys tili yordamchingizman.\nSizga qanday yordam bera olaman?",Markup.inlineKeyboard([[open],[Markup.button.callback("💬 Savol berish",'ask'),Markup.button.callback("ℹ️ Nimalar qila olaman?",'help')]])));
+  bot.start(c=>c.reply("Assalomu alaykum, "+c.from.first_name+"! 🦊\nMen Kori — til lug'atlari yordamchingizman.\nSizga qanday yordam bera olaman?",Markup.inlineKeyboard([[open],[Markup.button.callback("💬 Savol berish",'ask'),Markup.button.callback("ℹ️ Nimalar qila olaman?",'help')]])));
   bot.action('ask',c=>{c.answerCbQuery().catch(()=>{});c.reply("Savolingizni yozing, men javob beraman 🦊\n(masalan: «고맙습니다» nima degani?)")});
   bot.action('help',c=>{c.answerCbQuery().catch(()=>{});c.reply("Men:\n• so'z va grammatikani tushuntiraman\n• misollar keltiraman\n• mashq va suhbat qilaman\n\nIlovada kartochka, o'yinlar va mashqlar ham bor 👇",Markup.inlineKeyboard([open]))});
   bot.on('text',async c=>{const t=c.message.text;if(t.startsWith('/'))return;const id=c.from.id;
