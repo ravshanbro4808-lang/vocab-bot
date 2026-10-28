@@ -671,6 +671,28 @@ html body .cta button{box-shadow:0 7px 0 #b7701a,0 16px 24px -8px #e8993a99,inse
 html body input,html body select{border-radius:999px;padding-left:18px;box-shadow:inset 0 3px 6px #0001,0 2px 0 #fff8}
 html body :is(.nxt,.big2,.cta button).dodge{animation:dodge .52s cubic-bezier(.3,1.4,.5,1) both!important}
 @media(prefers-reduced-motion:reduce){html body,body::before,body::after,html body *{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+/* ===== 2-qatlam: to'rtburchaklarni yo'qotish, har xil o'zgaruvchan ranglar ===== */
+@keyframes mph{0%,100%{border-radius:46% 54% 50% 50%/56% 44% 56% 44%}33%{border-radius:56% 44% 42% 58%/46% 58% 42% 54%}66%{border-radius:42% 58% 56% 44%/52% 40% 60% 48%}}
+@keyframes hue{to{filter:hue-rotate(360deg)}}
+html body .cdf .bgr{border-radius:46% 54% 50% 50%/56% 44% 56% 44%;background:linear-gradient(135deg,var(--c1),var(--c2),var(--c1));background-size:300% 300%;animation:mph 9s ease-in-out infinite,aur 8s ease infinite}
+html body .cdf .bgr::after{border-radius:inherit;inset:14px}
+html body .cdf .pt{clip-path:none!important;border-radius:inherit}
+html body .cdw::before{left:18%;right:18%}
+/* ro'yxat qatorlari: har xil rang va shakl */
+html body :is(.wr,.exr,.rk,.lvrow,.gzr,.gzi,.gzl,.card,.stats>div){--a1:#7b5cff;--a2:#e0508a;border:0;background:linear-gradient(120deg,color-mix(in srgb,var(--a1) 20%,var(--c)),color-mix(in srgb,var(--a2) 20%,var(--c)),color-mix(in srgb,var(--a1) 20%,var(--c)));background-size:300% 300%;animation:aur 10s ease infinite;border-radius:34px 20px 34px 20px/26px 30px 26px 30px}
+html body :is(.wr,.exr,.rk,.lvrow,.gzr,.gzi,.gzl,.card,.stats>div):nth-child(even){border-radius:20px 34px 20px 34px/30px 26px 30px 26px}
+html body :is(.wr,.exr,.rk,.lvrow,.gzr,.gzi,.gzl,.card,.stats>div):nth-child(5n+2){--a1:#17b2a6;--a2:#4a78d4}
+html body :is(.wr,.exr,.rk,.lvrow,.gzr,.gzi,.gzl,.card,.stats>div):nth-child(5n+3){--a1:#f5a623;--a2:#e0508a}
+html body :is(.wr,.exr,.rk,.lvrow,.gzr,.gzi,.gzl,.card,.stats>div):nth-child(5n+4){--a1:#36b27a;--a2:#2aa3b8}
+html body :is(.wr,.exr,.rk,.lvrow,.gzr,.gzi,.gzl,.card,.stats>div):nth-child(5n+5){--a1:#a05be0;--a2:#ff8a5c}
+html body :is(.wr,.exr,.rk,.lvrow,.gzr,.gzi,.gzl,.card,.stats>div):active{transform:translateY(4px)}
+html body :is(.book,.tile){border-radius:38px 24px 38px 24px/30px 34px 30px 34px}
+html body :is(.book,.tile):nth-child(even){border-radius:24px 38px 24px 38px/34px 30px 34px 30px}
+html body :is(.mc,.mc>div>*,.slot,.tl,.exan,.exb,.cdinfo,.pb,.mgrid>div>*){border-radius:30px}
+html body .mc.dn,html body .mc.sl{animation:aur 4s ease infinite}
+html body :is(.exb,.cdinfo,.exan:not(:empty)){background:linear-gradient(120deg,#7b5cff22,#e0508a22,#f5a62322,#7b5cff22);background-size:300% 300%;animation:aur 9s ease infinite;padding:12px 14px}
+html body .exk{font-weight:800}
+html body .tiles .tile em,html body .gl em,html body .card .em{border-radius:50%}
 </style></head><body><div id="hd"></div><main id="m"></main>
 <script>
 try{localStorage.rm='0'}catch{}
@@ -712,19 +734,11 @@ function playWord(w,cb){if(!w)return;let once=0;const end=()=>{if(!once){once=1;
  let done=0;const tm=setTimeout(()=>{if(!done){done=1;sp()}},3500);
  api('/word-voice/'+w.id,{body:{}}).then(r=>{if(r&&r.audio)w.audio=r.audio;else w._vf=1;if(done)return;done=1;clearTimeout(tm);if(w.audio)pa();else sp()}).catch(()=>{w._vf=1;if(!done){done=1;clearTimeout(tm);sp()}})}
 // kartochka: avval koreyscha, ketidan o'zbekcha tarjimasi aytiladi
-function cardSay(w){if(!w)return;audUnlock();const t=window._sayT=(window._sayT||0)+1,uz=String(w.uz||'').replace(/⏳.*$/,'').trim().slice(0,120);
- // o'zbekcha ovoz koreyscha aytilayotgan paytda oldindan tayyorlanadi (server bir marta yasab saqlaydi)
- let up=null;if(uz&&w.id){up=w.audio_uz?Promise.resolve(w.audio_uz):api('/word-voice-uz/'+w.id,{body:{}}).then(r=>{if(r&&r.audio){w.audio_uz=r.audio;return r.audio}return null}).catch(()=>null)}
- const say=()=>{if(uz)speak(uz,null,'uz')};
- playWord(w,()=>setTimeout(async()=>{if(window._sayT!==t)return;let same=true;try{same=cur()===w}catch{}if(!same)return;
-  const f=up?await Promise.race([up,new Promise(z=>setTimeout(()=>z(null),5000))]):null;if(window._sayT!==t)return;
-  if(f)playSrc('/audio/'+f,null,say);else say()},200))}
-const shuf=a=>[...a].sort(()=>Math.random()-.5);
-const D=ms=>ms>Date.now()?new Date(ms).toLocaleDateString():'—';
-const PERM_UZ={dicts:["📚 Kitoblar va grammatika","kitob yaratish/tahrirlash/o'chirish, so'z tahrirlash, grammatika qo'shish, daraja va so'z turlari"],import:["📥 Fayl va ovoz","fayldan so'z qo'shish, ovoz yozish, avto ovoz"],tasks:["📝 Vazifalar","vazifa qo'shish va o'chirish"],payments:["💳 To'lovlar","to'lovlarni ko'rish va tasdiqlash"],trials:["🎁 Sinov muddati","sinov so'rovlarini boshqarish"],users:["👥 Foydalanuvchilar","obuna berish va bekor qilish"],plans:["🏷 Tarif rejalari","narx va tariflarni o'zgartirish"],methods:["🏦 To'lov usullari","karta va to'lov usullarini boshqarish"],admins:["🛡 Adminlar va holat","adminlarni tayinlash, AI va ovoz holatini ko'rish"]};
-const permBoxes=(cls,have)=>(me.PERMS||[]).map(p=>{const x=PERM_UZ[p]||[p,''];return `<label style="display:block;padding:6px 0"><input type=checkbox class=${cls} value=${p} ${have.includes(p)?'checked':''} style="width:auto"> <b>${x[0]}</b>${x[1]?`<br><small style="color:var(--mu)">${x[1]}</small>`:''}</label>`}).join('');
-const has=p=>me.is_admin==2||(me.is_admin==1&&me.perms.split(',').includes(p));
-const GR=[['#3f6fc4','#2a4d94'],['#2f9a76','#1d6e53'],['#d4604b','#a8402e'],['#d49a2c','#aa7312'],['#6a5bb8','#46398a'],['#2a9bb0','#1a6f80']];
+function cardSay(w){if(!w)return;audUnlock();const t=window._sayT=(window._sayT||0)+1,uz=String(w.uz||'').replace(/⏳.*$/,'').trim().slice(0,120);let dn=0;
+ const say=async()=>{if(dn||!uz||window._sayT!==t)return;dn=1;try{const c=cur();if(c&&w.id&&c.id!==w.id)return}catch{}
+  let f=w.audio_uz;if(!f&&w.id){try{const r=await api('/word-voice-uz/'+w.id,{body:{}});if(r&&r.audio){f=r.audio;w.audio_uz=f}}catch{}}
+  if(window._sayT!==t)return;if(f)playSrc('/audio/'+f,null,()=>speak(uz,null,'uz'));else speak(uz,null,'uz')};
+ playWord(w,()=>setTimeout(say,200));setTimeout(say,9000)}
 function confetti(n=34){const e=['🎉','⭐','✨','🎊','💛','🇰🇷'];for(let i=0;i<n;i++){const s=document.createElement('span');s.className='cf';s.textContent=e[i%e.length];s.style.left=Math.random()*100+'vw';s.style.animationDelay=Math.random()*.7+'s';s.style.fontSize=18+Math.random()*18+'px';document.body.appendChild(s);setTimeout(()=>s.remove(),3600)}}
 // ---------- navigatsiya (bitta "Orqaga" tugma)
 function head(t,bk){S.bk=bk||null;$('#hd').innerHTML=bk?`<button class=backpill onclick="${bk}">← Orqaga</button><h1 class=pt>${t}</h1>`:''}
@@ -1339,7 +1353,7 @@ document.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return;co
 
 // v22: tugma bosilganda "qochib" qaytadi, so'ng amal bajariladi
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.big2,.nxt,.cta button');
- if(!b||b._go||b.disabled||b.closest('.cdbar')||(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches))return;
+ if(!b||b._go||b.disabled||b.closest('.cdbar')||document.querySelector('.cdw')||(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches))return;
  e.preventDefault();e.stopImmediatePropagation();
  const sg=()=>Math.random()<.5?-1:1;b.style.setProperty('--dx',Math.round(sg()*(3+Math.random()*4))+'px');b.style.setProperty('--dy',Math.round(sg()*(3+Math.random()*4))+'px');b.style.setProperty('--rt',(sg()*(2+Math.random()*4)).toFixed(1)+'deg');
  b.classList.add('dodge');setTimeout(()=>{b.classList.remove('dodge');b._go=1;try{b.click()}finally{b._go=0}},520)},true);

@@ -338,12 +338,12 @@ const GRM=[
 db.exec(`create table if not exists wex(id integer primary key autoincrement,word_id int,ko text,uz text);create index if not exists wex_w on wex(word_id);
 create table if not exists gex(id integer primary key autoincrement,gid int,ko text,uz text);create index if not exists gex_g on gex(gid);`);
 function parseEx(t,lang){const out=[];t=String(t||'');let a=[];try{a=JSON.parse(t.match(/\[[\s\S]*\]/)[0])}catch{for(const m of t.match(/\{[^{}]*\}/g)||[])try{a.push(JSON.parse(m))}catch{}}
-  for(const o of a)if(o&&o.ko&&((lang&&lang!=='ko')||/[가-힣]/.test(o.ko||''))&&o.uz)out.push({ko:String(o.ko).trim().slice(0,160),uz:String(o.uz).trim().slice(0,200)});return out.slice(0,5)}
+  for(const o of a)if(o&&o.ko&&((lang&&lang!=='ko')||/[가-힣]/.test(o.ko||''))&&o.uz&&!/[가-힣А-Яа-я]/.test(o.uz)&&!((lang&&lang!=='ko')&&/[가-힣]/.test(o.ko)))out.push({ko:String(o.ko).trim().slice(0,160),uz:String(o.uz).trim().slice(0,200)});return out.slice(0,5)}
 // So'z kartochkasi uchun misol gaplar (bir marta AI yozadi, keyin bazadan beriladi)
 app.get('/api/wex/:id',async(r,s)=>{const id=+r.params.id;if(!id||id<1)return s.json([]);
-  let a=q('select ko,uz from wex where word_id=? limit 12',id);
+  const w0=one('select lang from words where id=?',id)||{},hg=x=>/[가-힣]/.test(x||''),okL=e=>(w0.lang&&w0.lang!=='ko')?!hg(e.ko):hg(e.ko);let a=q('select ko,uz from wex where word_id=? limit 12',id);{const bd=a.filter(e=>!okL(e));if(bd.length){for(const e of bd)run('delete from wex where word_id=? and ko=?',id,e.ko);a=a.filter(okL)}}
   if(a.length<3){const w=one('select ko,uz,lang from words where id=?',id);
-    if(w&&AI_KEY){try{const t=await callClaude([{role:'user',content:`${lgn(w.lang)} so'zi: «${w.ko}» (o'zbekcha: ${w.uz}). Shu so'zni ishlatib, A1-B1 darajasidagi 3 ta TURLI, oddiy va tabiiy gap yoz — gaplar FAQAT ${lgn(w.lang)}da, o'sha tilning o'z yozuvida va to'g'ri grammatika bilan bo'lsin ("ko" maydoniga shu til gapi yoziladi). "uz" — har gapning sof, to'g'ri o'zbek adabiy tilidagi (lotin yozuvi) tarjimasi; ruscha, inglizcha yoki boshqa tildagi so'z aralashtirma. FAQAT JSON qaytar: [{"ko":"...","uz":"..."}]`}],"Sen koreys tili o'qituvchisisan. Faqat JSON massiv qaytarasan.",600);
+    if(w&&AI_KEY){try{const t=await callClaude([{role:'user',content:`${lgn(w.lang)} so'zi: «${w.ko}» (o'zbekcha: ${w.uz}). Shu so'zni ishlatib, A1-B1 darajasidagi 3 ta TURLI, oddiy va tabiiy gap yoz — gaplar FAQAT ${lgn(w.lang)}da, o'sha tilning o'z yozuvida va to'g'ri grammatika bilan bo'lsin ("ko" maydoniga shu til gapi yoziladi). "uz" — har gapning sof, to'g'ri o'zbek adabiy tilidagi (lotin yozuvi) tarjimasi; ruscha, inglizcha yoki boshqa tildagi so'z aralashtirma. FAQAT JSON qaytar: [{"ko":"...","uz":"..."}]`}],"Sen til o'qituvchisisan: misol gaplarni har doim so'zning o'z tilida yozasan, tarjimani sof o'zbekcha (lotin). Faqat JSON massiv qaytarasan.",600);
       const n=parseEx(t,w.lang);for(const e of n)run('insert into wex(word_id,ko,uz) values(?,?,?)',id,e.ko,e.uz);a=q('select ko,uz from wex where word_id=? limit 12',id)}catch(e){console.log('wex',e.message)}}}
   s.json(a)});
 // Grammatika (pullik: obuna yoki bepul sinov)
