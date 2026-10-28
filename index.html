@@ -585,9 +585,9 @@ async function api(p,o={}){const h={'x-init':tg?.initData||'','x-dev':dev||''},t
   const r=await fetch('/api'+p,{method:o.body?'POST':'GET',headers:h,body:b});
   if(r.status==401){login();throw 0}if(r.status==402){gate();throw 0}if(r.status==403){alert("Bu funksiya sizga o'chirilgan");throw 0}const tx=await r.text();try{return JSON.parse(tx)}catch{return {e:'Server javobi xato (HTTP '+r.status+'): '+tx.replace(/<[^>]+>/g,' ').trim().slice(0,150)}}}
 const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let POS={ot:'Ot (명사)',fel:"Fe'l (동사)",sifat:'Sifat (형용사)',ravish:'Ravish (부사)',olmosh:'Olmosh (대명사)',son:'Son (수사)',yordamchi:'Yordamchi (조사)'},POSL=[];
+let POS={ot:'Ot',fel:"Fe'l",sifat:'Sifat',ravish:'Ravish',olmosh:'Olmosh',son:'Son',yordamchi:'Yordamchi'},POSL=[];
 const posName=p=>POS[p]||p;
-async function loadPos(){try{const a=await api('/poss');if(Array.isArray(a)&&a.length){POSL=a;POS={};a.forEach(x=>POS[x.key]=x.name+(x.ko?' ('+x.ko+')':''))}}catch{}}
+async function loadPos(){try{const a=await api('/poss');if(Array.isArray(a)&&a.length){POSL=a;POS={};a.forEach(x=>POS[x.key]=x.name)}}catch{}}
 S.lvn={};
 const lname=(d,l)=>((S.lvn[d]||[]).find(z=>z.level==l)||{}).name||(l+'-daraja');
 function pickVoice(l){try{const vs=speechSynthesis.getVoices()||[],f=x=>vs.find(v=>String(v.lang).toLowerCase().replace('_','-').startsWith(x));return l==='uz'?(f('uz')||f('tr')||f('ru')):f(l)}catch{return null}}
@@ -649,7 +649,7 @@ const bkChips=d=>d.some(x=>x.lvl)?`<div class=posch>${[['','Hammasi'],['b',"Bosh
 function book(x,i){const g=GR[i%GR.length];return `<div class=book style="background:linear-gradient(145deg,${g[0]},${g[1]})" onclick="${x.ok?`nav(openDict,${x.id})`:'sheet()'}"><h3>${esc(x.name)}</h3><small>${x.free?'Bepul':"Lug'at"}</small><span class=pill2>${x.ok?'✓':'🔒'} ${x.levels} daraja</span><i class=gh>${esc([...String(x.name)][0])}</i></div>`}
 async function home(){S.admOpen=null;head('');const [d,st]=await Promise.all([api('/dicts'),api('/stats')]);me=await api('/me');
  const lv=Math.floor(st.learned/50)+1,pr=Math.round((st.learned%50)/50*100);
- const dock=[['📖','Grammatika','nav(gramHome)','#7b5cff,#e0508a'],['🎮',"O'yinlar",'nav(gHub)','#ff8a5c,#e0508a'],['📝','Topshiriq','nav(vTasks)','#2e8a69,#0f8a9d'],['🦊','Tulki',"nav(foxChat)",'#ffb347,#ff7a45'],['🏆','Reyting','nav(rating)','#4a3f93,#7b5cff'],['💎','Obuna','sheet()','#d48a1c,#f5c05a']];
+ const dock=[['📖','Grammatika','nav(gramLangPick)','#7b5cff,#e0508a'],['🎮',"O'yinlar",'nav(gHub)','#ff8a5c,#e0508a'],['📝','Topshiriq','nav(vTasks)','#2e8a69,#0f8a9d'],['🦊','Tulki',"nav(foxChat)",'#ffb347,#ff7a45'],['🏆','Reyting','nav(rating)','#4a3f93,#7b5cff'],['💎','Obuna','sheet()','#d48a1c,#f5c05a']];
  dock.push(['👤','Profil','nav(vProfile)','#651fff,#d500f9']);if(me.is_admin)dock.push(['⚙️','Sozlamalar','S.admOpen=null;nav(vAdmin)','#5b6577,#2c3340']);
  H(`<div class=hero><i class=kr>👋</i><small>Assalomu alaykum!</small><h2>Salom, ${esc(me.name)}</h2><div class=xp><i style="width:${pr}%"></i></div><small>${lv}-daraja · keyingisigacha ${50-st.learned%50} so'z · ${st.rank} ball (hafta)</small></div>
  <div class=dock>${dock.map(x=>`<button class=dk onclick="${x[2]}"><i style="background:linear-gradient(145deg,${x[3]})">${x[0]}</i><span>${x[1]}</span></button>`).join('')}</div>
@@ -707,14 +707,14 @@ function skinG(sk,id,i){const rn=(n=>{let x=(i*977+sk*131+n*7919)%2147483647||1;
  else if(sk==6){for(let r=10;r<=84;r+=11)g+=`<circle cx="50" cy="50" r="${r}" fill="none" stroke="#fff" stroke-opacity="${(.28-r*.0022).toFixed(2)}" stroke-width="1.2"/>`}
  else g=`<polygon points="-10,62 120,-22 120,8 -10,92" ${W} fill-opacity=".14"/><polygon points="-10,100 120,20 120,30 -10,110" ${W} fill-opacity=".1"/>`;
  return g}
-function cardFace(i,side,txt,kind){const p=CPAL[(i+(side=='k'?4:0))%CPAL.length],dk=mixc(p[1],'k',.42),sty=`--c1:${p[0]};--c2:${p[1]};--dk:${dk}`,tag=side=='f'?'🇰🇷':'🇺🇿',sk=(i*3+(side=='k'?5:0))%8,gl=ORN[sk],uid='s'+i+side;
+function cardFace(i,side,txt,kind){const p=CPAL[(i+(side=='k'?4:0))%CPAL.length],dk=mixc(p[1],'k',.42),sty=`--c1:${p[0]};--c2:${p[1]};--dk:${dk}`,tag=side=='f'?(window._cfl||'🇰🇷'):'🇺🇿',sk=(i*3+(side=='k'?5:0))%8,gl=ORN[sk],uid='s'+i+side;
  const orn=(bx,by,bw,bh)=>`<i class="orn oa" style="left:${bx+bw-9}%;top:${by-5}%">${gl}</i><i class="orn ob" style="left:${bx+2}%;top:${by+bh-1}%">${gl}</i>`;
  if(kind=='rect')return `<div class="cdf ${side} sk${sk}" style="${sty}"><div class=bgr></div><svg class=pt viewBox="0 0 100 100" preserveAspectRatio="none">${skinG(sk,uid,i)}</svg><i class="glr rg"></i><i class=cdtag>${tag}</i>${orn(6,8,88,84)}<div class=ct style="left:6%;top:8%;width:88%;height:84%"><b class=tx2>${esc(txt)}</b></div></div>`;
  const sh=SH[SHK[i%SHK.length]],id='g'+i+side,fill=`url(#${id})`;
  let ext='';for(let k=5;k>=1;k--)ext+=`<g transform="translate(0 ${(k*.8).toFixed(1)})">${sh.svg.replace(/stroke="[^"]*"/g,'stroke="none"').replace(/FILL/g,dk).replace(/MID/g,'m'+id+k)}</g>`;
  const mu='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${sh.vb}" preserveAspectRatio="none">${sh.svg.replace(/stroke="[^"]*"/g,'stroke="none"').replace(/FILL/g,'#000').replace(/MID/g,'mm')}</svg>`).replace(/'/g,'%27'),svg=sh.svg.replace(/FILL/g,fill).replace(/MID/g,'m'+id),mk=`<mask id="k${id}" maskUnits="userSpaceOnUse" x="-20" y="-20" width="140" height="140"><g>${sh.svg.replace(/stroke="[^"]*"/g,'stroke="none"').replace(/FILL/g,'#fff').replace(/MID/g,'n'+id)}</g></mask>`;
  return `<div class="cdf ${side} sk${sk}" style="${sty}"><svg class=bg viewBox="${sh.vb}" preserveAspectRatio="none"><defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100" y2="100"><stop offset="0" stop-color="${mixc(p[0],'w',.38)}"/><stop offset=".45" stop-color="${p[0]}"/><stop offset="1" stop-color="${p[1]}"/></linearGradient>${mk}</defs>${ext}${svg}<g mask="url(#k${id})">${skinG(sk,uid,i)}</g></svg><i class=glr style="-webkit-mask-image:url('${mu}');mask-image:url('${mu}')"></i>${orn(...sh.box)}<div class=ct style="left:${sh.box[0]}%;top:${sh.box[1]}%;width:${sh.box[2]}%;height:${sh.box[3]}%"><b class=tx2>${esc(txt)}</b></div></div>`}
-function cardHTML(r,w){const kind=r.shape,sh=kind=='rect'?{ar:'3/2'}:SH[SHK[r.i%SHK.length]];
+function cardHTML(r,w){window._cfl=lgFlag(w.lang||'ko');const kind=r.shape,sh=kind=='rect'?{ar:'3/2'}:SH[SHK[r.i%SHK.length]];
  return `<div class=cdw id=cdw style="--ar:${sh.ar}" onclick="cdFlip(this)"><div class=cdi>${cardFace(r.i,'f',w.ko,kind)}${cardFace(r.i,'k',w.uz,kind)}</div></div>`}
 function cdRepeat(){const e=$('#cdw');if(e&&e.classList.contains('on'))cdFlip(e);cardSay(cur())}
 function cdFlip(f){if(Date.now()-(window._sw||0)<400||f._fl)return;const i=f.querySelector('.cdi');if(!i)return;const on=f.classList.contains('on'),a=on?180:0,b=on?0:180,m=(a+b)/2;f.classList.toggle('on');
@@ -732,11 +732,11 @@ const frm=x=>x.form&&x.form!==x.ko?`<br><small class=frm>matnda: ${esc(x.form)}<
 function wrowIn(x){return `<div class=wr id=wr${x.id}><span><b>${esc(x.ko)}</b> <small>${esc(x.uz)}</small>${frm(x)}</span><span><button class=cb onclick="playWord(WD[${x.id}])">🔊</button><button class=cb onclick="wrEx(${x.id})">💬</button>${has('dicts')?`<button class=cb onclick="editWord(${x.id})">✏️</button>`:''}</span></div>`}
 function wrow(x){return wrowIn(x)+`<div id=wre${x.id} class=exb></div>`}
 // so'z ro'yxatida misol gaplarni ochish/yopish; har bir gapda 🔊 Eshitish (koreyscha, keyin o'zbekcha tarjimasi)
-async function wrEx(id){const box=$('#wre'+id);if(!box)return;if(box.innerHTML){box.innerHTML='';return}
+async function wrEx(id){window._exL=((WD[id]||{}).lang)||'ko';const box=$('#wre'+id);if(!box)return;if(box.innerHTML){box.innerHTML='';return}
   box.innerHTML='<div class=exh>⏳ Misol gaplar...</div>';
   if(!S.exc[id]){try{const a=await api('/wex/'+id);S.exc[id]=Array.isArray(a)?a:[]}catch{S.exc[id]=[]}}
   const a=S.exc[id];
-  box.innerHTML=a.length?`<div class=exh>💬 Misol gaplar</div>`+a.map(e=>`<div class=exr><div class=exk>${esc(e.ko)}</div><div class=exu>${esc(e.uz)}</div><div class=exbt><button class=pill onclick="sayKoUz(${jq(e.ko)},${jq(e.uz)},this)">🔊 Eshitish</button></div></div>`).join(''):`<div class=exh>Misol gap topilmadi</div>`}
+  box.innerHTML=a.length?`<div class=exh>💬 Misol gaplar</div>`+a.map(e=>`<div class=exr><div class=exk>${esc(e.ko)}</div><div class=exu>${esc(e.uz)}</div><div class=exbt><button class=pill onclick="sayKoUz(${jq(e.ko)},${jq(e.uz)},this,${jq(window._exL||'ko')})">🔊 Eshitish</button></div></div>`).join(''):`<div class=exh>Misol gap topilmadi</div>`}
 async function wordsView(id,pf){head("Barcha so'zlar",'back()');const [w,t]=await Promise.all([api('/words?dict='+id+'&lang='+((S.lg&&S.lg[id])||'')),api('/tree/'+id)]);S.lvn[id]=t.levels||[];S.wvd=id;w.forEach(x=>WD[x.id]=x);
  const all=w,cnt={};all.forEach(x=>cnt[x.pos]=(cnt[x.pos]||0)+1);const list=pf?all.filter(x=>x.pos==pf):all;const g={};list.forEach(x=>{const k=x.level+'|'+x.pos+'|'+x.section;(g[k]=g[k]||[]).push(x)});
  const keys=posAll(t.rows);
@@ -1032,21 +1032,28 @@ function gramAdmCard(ga){const cats=ga.cats||[],lv=ga.lv||['',"Boshlang'ich","O'
   return `<div class=card><b>➕ Grammatika qo'shish</b><div class=s>1) Qaysi bo'limga qo'shilishini tanlang. 2) Grammatika nomi va (xohlasangiz) ma'nosi hamda qayerda ishlatilishini yozing — bo'sh qoldirsangiz, AI o'zi to'ldiradi. 3) Misol gaplarni AI o'zi yozadi va ular grammatika bo'limida 🔊 bilan eshitiladi.</div>
   <select id=gc onchange="gcSel()">${cats.map(c=>`<option>${esc(c)}</option>`).join('')}<option value="__new">➕ Yangi bo'lim yaratish</option></select>
   <input id=gcn placeholder="Yangi bo'lim nomi" style="display:none">
+  <select id=gla>${(S.langs||[]).map(l=>`<option value=${l.code} ${l.code=='ko'?'selected':''}>${l.flag} ${esc(l.name)}</option>`).join('')}</select>
+  <button class=big2 onclick="gramAuto()">🤖 Shu tilning HAMMA grammatikasini AI yaratsin</button><div id=gauto class=s></div>
   <select id=gl>${[1,2,3].map(i=>`<option value=${i}>${esc(lv[i])}</option>`).join('')}</select>
   <input id=gp placeholder="Grammatika nomi (masalan: -(으)ㄹ 뻔하다)">
   <input id=gm placeholder="Ma'nosi (ixtiyoriy)">
   <input id=gu placeholder="Qayerda va qachon ishlatiladi (ixtiyoriy)">
   <button class=big2 id=gb onclick="gramAdd()">➕ Qo'shish (misollarni AI yozadi)</button>
   <div id=gmsg class=s></div>
-  ${it.length?`<div class=s style="margin-top:10px">O'ZINGIZ QO'SHGANLAR (${it.length})</div>`+it.map(x=>`<div class=lvrow><span style="flex:1;min-width:0">${esc(x.p)} <small>${esc(x.c)} · ${x.n} ta misol</small></span><button class="cb red" onclick="gramDel(${x.id})">🗑</button></div>`).join(''):''}</div>`}
+  ${it.length?`<div class=s style="margin-top:10px">O'ZINGIZ QO'SHGANLAR (${it.length})</div>`+it.map(x=>`<div class=lvrow><span style="flex:1;min-width:0">${lgFlag(x.lang||'ko')} ${esc(x.p)} <small>${esc(x.c)} · ${x.n} ta misol</small></span><button class="cb red" onclick="gramDel(${x.id})">🗑</button></div>`).join(''):''}</div>`}
 function gcSel(){const i=$('#gcn');if(i)i.style.display=$('#gc').value==='__new'?'block':'none'}
 async function gramAdd(){const b=$('#gb');let c=$('#gc').value;if(c==='__new')c=$('#gcn').value.trim();const p=$('#gp').value.trim();
   if(!c)return alert("Bo'limni tanlang yoki yangi bo'lim nomini yozing");if(!p)return alert('Grammatika nomini yozing');
   const old=b.textContent;b.disabled=1;b.textContent='⏳ Misol gaplar yozilmoqda...';$('#gmsg').textContent='';
-  try{const r=await api('/admin/gram',{body:{c,p,l:+$('#gl').value,m:$('#gm').value,u:$('#gu').value}});
+  try{const r=await api('/admin/gram',{body:{lang:$('#gla').value,c,p,l:+$('#gl').value,m:$('#gm').value,u:$('#gu').value}});
     if(r&&r.ok){S.gr=null;alert("✅ Qo'shildi: "+p+" ("+r.n+" ta misol gap)");await vAdmin()}
     else{b.disabled=0;b.textContent=old;$('#gmsg').textContent=(r&&r.e)||'Xatolik'}}
   catch(e){b.disabled=0;b.textContent=old;$('#gmsg').textContent="Xatolik, qayta urinib ko'ring"}}
+async function gramAuto(){const lang=$('#gla').value,st=$('#gauto');st.textContent='⏳ Boshlanmoqda...';
+  const r=await api('/admin/gram/auto',{body:{lang}}).catch(()=>null);if(!r||!r.ok){st.textContent=(r&&r.e)||'Xatolik';return}
+  const tm=setInterval(async()=>{const j=await api('/admin/gram/auto/'+lang).catch(()=>null);if(!j)return;
+   st.textContent=(j.stage||'')+' · '+(j.done||0)+'/'+(j.total||0)+" · qo'shildi: "+(j.added||0)+(j.err?' · xato: '+j.err:'');
+   if(j.fin){clearInterval(tm);S.gr=null}},3000)}
 async function gramDel(id){if(!confirm("Bu grammatika va uning misollari o'chirilsinmi?"))return;await api('/admin/gram/del',{body:{id}});S.gr=null;vAdmin()}
 // ---------- ovoz yozish: kitob → daraja → tur → bo'lim
 
@@ -1249,17 +1256,17 @@ const plainKo=t=>String(t).replace(/[{}]/g,'');
 const hl=t=>esc(t).replace(/\{(.+?)\}/g,'<mark>$1</mark>');
 // ovoz serverdan olinadi (brauzer koreyscha ovozi telefonda ko'pincha yo'q), bo'lmasa brauzer ovoziga qaytadi
 const _sayC={};
-async function srvAudio(text){text=String(text).replace(/[{}]/g,'');if(_sayC[text])return _sayC[text];
-  const r=await api('/say',{body:{text}}).catch(()=>null);if(r&&r.audio){_sayC[text]=r.audio;return r.audio}return null}
+async function srvAudio(text,lang){text=String(text).replace(/[{}]/g,'');lang=lang&&lang!=='ko'?lang:'';const ck=lang+'|'+text;if(_sayC[ck])return _sayC[ck];
+  const r=await api('/say',{body:{text,lang}}).catch(()=>null);if(r&&r.audio){_sayC[ck]=r.audio;return r.audio}return null}
 // gap: avval koreyscha, keyin o'zbekcha tarjimasi (kartochkadagi so'z kabi)
-function sayKoUz(ko,uz,b){const t=window._sayT=(window._sayT||0)+1;audUnlock();try{speechSynthesis.cancel()}catch{}
+function sayKoUz(ko,uz,b,lang){lang=lang||'ko';const t=window._sayT=(window._sayT||0)+1;audUnlock();try{speechSynthesis.cancel()}catch{}
   let old='';if(b){old=b.textContent;b.disabled=1;b.textContent='⏳'}const rel=()=>{if(b){b.disabled=0;b.textContent=old}};
-  const pu=uz?srvAudio(uz):Promise.resolve(null);
+  const pu=uz?srvAudio(uz,'uz'):Promise.resolve(null);
   const second=async()=>{if(window._sayT!==t||!uz)return;const f=await pu;if(window._sayT!==t)return;if(f)playSrc('/audio/'+f,null,()=>speak(uz,null,'uz'));else speak(uz,null,'uz')};
-  srvAudio(ko).then(a=>{rel();if(window._sayT!==t)return;if(a)playSrc('/audio/'+a,()=>setTimeout(second,250),()=>speak(ko,second));else speak(ko,second)})}
+  srvAudio(ko,lang).then(a=>{rel();if(window._sayT!==t)return;if(a)playSrc('/audio/'+a,()=>setTimeout(second,250),()=>speak(ko,second,lang));else speak(ko,second,lang)})}
 const jq=v=>esc(JSON.stringify(v)).replace(/'/g,'&#39;');
-function exHTML(e,wid){return `<div class=exr><div class=exk>${esc(e.ko)}</div><div class=exu>${esc(e.uz)}</div><div class=exbt><button class=pill onclick="sayKoUz(${jq(e.ko)},${jq(e.uz)},this)">🔊 Eshitish</button><button class=pill onclick="exTahlil(this,${jq(e.ko)})">🔍 Tahlil</button><button class=pill onclick="exShow(${wid},1)">🔄 Boshqa misol</button></div></div><div id=exan class=exan></div>`}
-function exShow(wid,again){const box=$('#exb'),a=S.exc[wid];if(!box||!a||!a.length)return;let i=Math.floor(Math.random()*a.length);if(a.length>1&&i==S.exlast[wid])i=(i+1)%a.length;S.exlast[wid]=i;box.innerHTML=`<div class=exh>💬 Misol gap</div>`+exHTML(a[i],wid)}
+function exHTML(e,wid){return `<div class=exr><div class=exk>${esc(e.ko)}</div><div class=exu>${esc(e.uz)}</div><div class=exbt><button class=pill onclick="sayKoUz(${jq(e.ko)},${jq(e.uz)},this,${jq(window._exL||'ko')})">🔊 Eshitish</button><button class=pill onclick="exTahlil(this,${jq(e.ko)})">🔍 Tahlil</button><button class=pill onclick="exShow(${wid},1)">🔄 Boshqa misol</button></div></div><div id=exan class=exan></div>`}
+function exShow(wid,again){window._exL=((cur()||{}).lang)||'ko';const box=$('#exb'),a=S.exc[wid];if(!box||!a||!a.length)return;let i=Math.floor(Math.random()*a.length);if(a.length>1&&i==S.exlast[wid])i=(i+1)%a.length;S.exlast[wid]=i;box.innerHTML=`<div class=exh>💬 Misol gap</div>`+exHTML(a[i],wid)}
 // ---- gapni so'zma-so'z tahlil qilish
 const _anC={};let _anCur=[];
 const _dot=x=>{x=String(x||'').trim();return x&&!/[.!?]$/.test(x)?x+'.':x};
@@ -1285,12 +1292,18 @@ async function loadEx(w){if(!w||!w.id||w.id<1)return;const wid=w.id;
 // ---------- Grammatika bo'limi
 const GCAT_ICON={'Yuklamalar':'🔗','Tugatuvchi shakllar':'🏁','Zamon va sifatdosh':'⏳',"Bog'lovchilar":'🧵','Sabab va maqsad':'🎯','Shart va taxmin':'🤔',"Istak, reja va taklif":'💡',"Ruxsat, taqiq va majburiyat":'🚦',"Yordamchi fe'llar":'🛠',"Gap ichidagi nutq":'💬',"Tartibsiz fe'llar":'🔀','Sonlar va sanash':'🔢',"So'roq va inkor":'❓','Hurmat va uslub':'🙇',"So'z yasash":'🧱'};
 S.gl=S.gl||0;S.gcat=S.gcat||'';S.gr=null;
-async function gramLoad(){if(!S.gr){const d=await api('/gram');if(!d||!d.g)throw 0;d.by={};d.g.forEach(g=>d.by[g.id]=g);S.gr=d}return S.gr}
+async function gramLoad(){if(S.gr&&S.gr.lg!==(S.gLang||'ko'))S.gr=null;if(!S.gr){const d=await api('/gram?lang='+(S.gLang||'ko'));if(d)d.lg=S.gLang||'ko';if(!d||!d.g)throw 0;d.by={};d.g.forEach(g=>d.by[g.id]=g);S.gr=d}return S.gr}
 const gramPool=()=>S.gr.g.filter(g=>(!S.gl||g.l==S.gl)&&(!S.gcat||g.c==S.gcat));
+const lgName=c=>((S.langs||[]).find(l=>l.code==c)||{}).name||(c=='ko'?'Koreys':c);
+async function gramLangPick(){head('Grammatika','back()');let L=[];try{L=await api('/gram/langs')}catch{}
+ if(!Array.isArray(L)||!L.length)return H('<p class=s>Tillar yuklanmadi</p>');S.langs=S.langs&&S.langs.length?S.langs:L;
+ L=L.slice().sort((a,b)=>b.n-a.n);
+ H(`<div class=hero><i class=kr>🌐</i><small>Grammatika</small><h2>Tilni tanlang</h2></div><div class=tiles>${L.map(l=>`<div class=tile style="background:linear-gradient(145deg,#7b5cff,#e0508a);${l.n?'':'opacity:.45'}" ${l.n?`onclick="gramPick('${l.code}')"`:''}><em>${l.flag}</em><b>${esc(l.name)} tili</b><small>${esc(l.native)} · ${l.n?l.n+' ta grammatika':"hali qo'shilmagan"}</small></div>`).join('')}</div>`)}
+function gramPick(c){S.gLang=c;S.gr=null;S.gcat='';S.gl=0;nav(gramHome)}
 async function gramHome(){head('Grammatika','back()');let d;try{d=await gramLoad()}catch{return}
  const cats=[...new Set(d.g.map(g=>g.c))],pool=gramPool();
  const GM=[['fill','✏️',"Bo'sh joyni to'ldir","Gapdagi grammatikani toping",'#ff8a5c,#e0508a'],['mean','🔎',"Ma'nosi nima?","Grammatika → tarjima",'#2e8a69,#0f8a9d'],['which','🧐','Qaysi grammatika?',"Gap → grammatika",'#7b5cff,#4a55e8'],['build','🧩','Gap tuz',"Bo'laklarni tartibga soling",'#d48a1c,#f5c05a'],['match','🔀','Juftlash',"Grammatika ↔ ma'no",'#0f8a9d,#2f5fb3']];
- H(`<div class=hero><i class=kr>문법</i><small>Koreys grammatikasi</small><h2>${d.g.length} ta grammatika · 5 ta o'yin</h2></div>
+ H(`<div class=hero><i class=kr>${lgFlag(S.gLang||'ko')}</i><small>${esc(lgName(S.gLang||'ko'))} tili grammatikasi</small><h2>${d.g.length} ta grammatika · 5 ta o'yin</h2></div>
  <h3 class=sec style="font-size:18px">🎮 O'yinlar${pool.length<8?' <small>(filtrda kam — hammasi olinadi)</small>':''}</h3><div class=tiles>${GM.map(g=>`<div class=tile style="background:linear-gradient(145deg,${g[4]})" onclick="nav(gramGame,'${g[0]}')"><em>${g[1]}</em><b>${g[2]}</b><small>${g[3]}</small></div>`).join('')}</div>
  <h3 class=sec style="font-size:18px">📚 Darslar</h3>
  <div class=posch>${[0,1,2,3].map(l=>`<button class="b ${S.gl==l?'sel':'g'}" onclick="S.gl=${l};gramHome()">${l?d.lv[l]:'Hammasi'}</button>`).join('')}</div>
@@ -1314,9 +1327,9 @@ function gramText(id){const g=S.gr.by[id],d=S.gr,_d=x=>{x=String(x||'').trim();r
   return [`Grammatika: ${g.p}.`,`Daraja: ${d.lv[g.l]}. Turkum: ${g.c}.`,`Ma'nosi: ${_d(g.m)}`,`Qachon va qayerda ishlatiladi: ${_d(g.u)}`].join(' ')}
 async function sayGram(id,b){if(!S.gr||!S.gr.by[id])return;const t=window._sayT=(window._sayT||0)+1;audUnlock();try{speechSynthesis.cancel()}catch{}
   const g=S.gr.by[id],parts=[g.p,g.m,g.u].map(x=>String(x||'').trim()).filter(Boolean);let old='';if(b){old=b.textContent;b.disabled=1;b.textContent='⏳'}
-  const urls=await Promise.all(parts.map(p=>srvAudio(p)));if(b){b.disabled=0;b.textContent=old}
-  for(let k=0;k<parts.length;k++){if(window._sayT!==t)return;await new Promise(res=>{if(urls[k])playSrc('/audio/'+urls[k],res,()=>speak(parts[k],res,'uz'));else speak(parts[k],res,'uz')});await new Promise(z=>setTimeout(z,250))}}
-function gxRow(e){return `<div class=exr><div class=exk>${hl(e[0])}</div><div class=exu>${esc(e[1])}</div><div class=exbt><button class=pill onclick="sayKoUz(${jq(plainKo(e[0]))},${jq(e[1])},this)">🔊 Eshitish</button></div></div>`}
+  const urls=await Promise.all(parts.map((p,k)=>srvAudio(p,k==0?(S.gLang||'ko'):'uz')));if(b){b.disabled=0;b.textContent=old}
+  for(let k=0;k<parts.length;k++){if(window._sayT!==t)return;await new Promise(res=>{if(urls[k])playSrc('/audio/'+urls[k],res,()=>speak(parts[k],res,k==0?(S.gLang||'ko'):'uz'));else speak(parts[k],res,k==0?(S.gLang||'ko'):'uz')});await new Promise(z=>setTimeout(z,250))}}
+function gxRow(e){return `<div class=exr><div class=exk>${hl(e[0])}</div><div class=exu>${esc(e[1])}</div><div class=exbt><button class=pill onclick="sayKoUz(${jq(plainKo(e[0]))},${jq(e[1])},this,${jq(S.gLang||'ko')})">🔊 Eshitish</button></div></div>`}
 async function gramMore(id,b){b.disabled=1;b.textContent='⏳ ...';const r=await api('/gram/more',{body:{id}}).catch(()=>null);b.disabled=0;b.textContent='✨ AI yangi misol';
  if(!r||!r.ex||!r.ex.length)return alert((r&&r.e)||"Yangi misol topilmadi");S.gr.by[id].e.push(...r.ex);$('#gxl').innerHTML=r.ex.map(gxRow).join('')}
 // ---------- 5 ta o'yin
@@ -1341,7 +1354,7 @@ function gramQ(){const g=S.gg,q=g.qs[g.i];head(GTITLE[g.mode],'back()');if(!q)re
  const pb=`<div class=pb><i style="width:${Math.round(g.i/g.qs.length*100)}%"></i></div>`;
  if(g.mode=='match'){g.sel=null;g.done=0;g.R=shuf(q.pairs.map(x=>x.m));return H(pb+mas("Grammatikani uning ma'nosi bilan juftlang!")+`<div class=mgrid><div>${q.pairs.map(p=>`<button class="mc" data-k="p${p.id}" onclick="gMatch(this,'p',${p.id})">${esc(p.p)}</button>`).join('')}</div><div>${g.R.map(m=>{const p=q.pairs.find(x=>x.m==m);return `<button class="mc" data-k="m${p.id}" onclick="gMatch(this,'m',${p.id})">${esc(m)}</button>`}).join('')}</div></div><div id=gfb></div>`)}
  if(g.mode=='build'){g.ans=[];g.tiles=shuf(q.L.map((c,i)=>({c,i})));return gBuildV(pb)}
- const top=g.mode=='fill'?`${mas("Bo'sh joyga mos grammatikani tanlang")}<div class=sticker style="font-size:26px">${esc(q.ko)}<small>${esc(q.uz)}</small></div>`:g.mode=='mean'?`${mas("Bu grammatika qanday ma'no beradi?")}<div class=sticker>${esc(q.g.p)}</div>`:`${mas('Bu gapda qaysi grammatika ishlatilgan?')}<div class=sticker style="font-size:26px">${esc(q.ko)}<small>${esc(q.uz)}</small><button class=pill onclick="speak(${esc(JSON.stringify(q.ko)).replace(/'/g,'&#39;')})">🔊</button></div>`;
+ const top=g.mode=='fill'?`${mas("Bo'sh joyga mos grammatikani tanlang")}<div class=sticker style="font-size:26px">${esc(q.ko)}<small>${esc(q.uz)}</small></div>`:g.mode=='mean'?`${mas("Bu grammatika qanday ma'no beradi?")}<div class=sticker>${esc(q.g.p)}</div>`:`${mas('Bu gapda qaysi grammatika ishlatilgan?')}<div class=sticker style="font-size:26px">${esc(q.ko)}<small>${esc(q.uz)}</small><button class=pill onclick="speak(${esc(JSON.stringify(q.ko)).replace(/'/g,'&#39;')},null,'${S.gLang||'ko'}')">🔊</button></div>`;
  H(pb+top+q.opts.map((o,i)=>`<button class=opt2 data-o="${i}" onclick="gPick(this,${i})"><span>${'ABCD'[i]}</span>${esc(o)}</button>`).join('')+'<div id=gfb></div>')}
 function gFeed(ok,q,extra){const g=S.gg;if(ok)g.score++;else g.wrong.push(q.g||q);
  const p=q.g;$('#gfb').innerHTML=`<div class="${ok?'okb':'nob'}">${ok?'✅ To\'g\'ri!':'❌ Noto\'g\'ri'}</div>${p?`<div class=card style="display:block"><b>${esc(p.p)}</b> — ${esc(p.m)}<br><small>${esc(p.u)}</small>${extra||''}</div>`:''}<button class=nxt onclick="S.gg.i++;gramQ()">Keyingi ➜</button>`;if(ok)confetti(6)}
@@ -1351,7 +1364,7 @@ function gBuildV(pb){const g=S.gg,q=g.qs[g.i];pb=pb||`<div class=pb><i style="wi
  H(pb+mas("Bo'laklarni to'g'ri tartibda terib, gap tuz!")+`<div class=sticker style="font-size:24px">${esc(q.uz)}</div><div class=slots>${q.L.map((_,i)=>`<span class="slot ${g.ans[i]?'f':''}" style="font-size:18px">${g.ans[i]?esc(g.ans[i].c):''}</span>`).join('')}</div><div class=tilesrow>${g.tiles.map((t,i)=>`<button class="tl ${g.ans.includes(t)?'used':''}" style="font-size:18px" onclick="gBuildTap(${i})">${esc(t.c)}</button>`).join('')}</div><div class=row><button class=pill onclick="S.gg.ans=[];gBuildV()">↺ Qaytadan</button></div><div id=gfb></div>`)}
 function gBuildTap(ti){const g=S.gg,q=g.qs[g.i],t=g.tiles[ti];if(g.lock||g.ans.includes(t))return;g.ans.push(t);
  if(g.ans.length<q.L.length)return gBuildV();const ok=g.ans.map(x=>x.c).join(' ')==q.L.join(' ');
- if(ok){g.lock=1;gBuildV();speak(q.ko);gFeed(true,q,`<br>✔️ ${esc(q.ko)}`)}else{g.wrong.push(q.g);g.ans=[];gBuildV();document.querySelector('.slots')?.classList.add('shake');g.fails=(g.fails||0)+1;
+ if(ok){g.lock=1;gBuildV();speak(q.ko,null,S.gLang||'ko');gFeed(true,q,`<br>✔️ ${esc(q.ko)}`)}else{g.wrong.push(q.g);g.ans=[];gBuildV();document.querySelector('.slots')?.classList.add('shake');g.fails=(g.fails||0)+1;
   if(g.fails>=2){g.fails=0;g.lock=1;S.gg.wrong.pop();g.wrong.push(q.g);$('#gfb').innerHTML=`<div class=nob>❌ To'g'ri javob:</div><div class=card style="display:block"><b>${esc(q.ko)}</b><br><small>${esc(q.g.p)} — ${esc(q.g.m)}</small></div><button class=nxt onclick="S.gg.i++;gramQ()">Keyingi ➜</button>`}}}
 function gMatch(b,side,id){const g=S.gg;if(b.classList.contains('dn'))return;
  if(!g.sel){g.sel={b,side,id};b.classList.add('sl');return}

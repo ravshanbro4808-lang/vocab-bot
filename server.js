@@ -34,6 +34,7 @@ const DEFLV=["Boshlang'ich","O'rta","Yuqori"];
 const LANGS=[["en", "Ingliz", "English", "🇬🇧", "en-US"], ["ko", "Koreys", "한국어", "🇰🇷", "ko-KR"], ["ja", "Yapon", "日本語", "🇯🇵", "ja-JP"], ["zh", "Xitoy", "中文", "🇨🇳", "zh-CN"], ["ru", "Rus", "Русский", "🇷🇺", "ru-RU"], ["tr", "Turk", "Türkçe", "🇹🇷", "tr-TR"], ["ar", "Arab", "العربية", "🇸🇦", "ar-SA"], ["de", "Nemis", "Deutsch", "🇩🇪", "de-DE"], ["fr", "Fransuz", "Français", "🇫🇷", "fr-FR"], ["es", "Ispan", "Español", "🇪🇸", "es-ES"], ["it", "Italyan", "Italiano", "🇮🇹", "it-IT"], ["pt", "Portugal", "Português", "🇵🇹", "pt-PT"], ["nl", "Golland", "Nederlands", "🇳🇱", "nl-NL"], ["pl", "Polyak", "Polski", "🇵🇱", "pl-PL"], ["uk", "Ukrain", "Українська", "🇺🇦", "uk-UA"], ["kk", "Qozoq", "Қазақша", "🇰🇿", "kk-KZ"], ["ky", "Qirg'iz", "Кыргызча", "🇰🇬", "ky-KG"], ["tg", "Tojik", "Тоҷикӣ", "🇹🇯", "tg-TJ"], ["tk", "Turkman", "Türkmençe", "🇹🇲", "tk-TM"], ["az", "Ozarbayjon", "Azərbaycanca", "🇦🇿", "az-AZ"], ["fa", "Fors", "فارسی", "🇮🇷", "fa-IR"], ["hi", "Hind", "हिन्दी", "🇮🇳", "hi-IN"], ["ur", "Urdu", "اردو", "🇵🇰", "ur-PK"], ["bn", "Bengal", "বাংলা", "🇧🇩", "bn-BD"], ["id", "Indonez", "Bahasa Indonesia", "🇮🇩", "id-ID"], ["ms", "Malay", "Bahasa Melayu", "🇲🇾", "ms-MY"], ["th", "Tay", "ไทย", "🇹🇭", "th-TH"], ["vi", "Vyetnam", "Tiếng Việt", "🇻🇳", "vi-VN"], ["tl", "Filipin", "Tagalog", "🇵🇭", "fil-PH"], ["he", "Ivrit", "עברית", "🇮🇱", "he-IL"], ["el", "Yunon", "Ελληνικά", "🇬🇷", "el-GR"], ["sv", "Shved", "Svenska", "🇸🇪", "sv-SE"], ["no", "Norveg", "Norsk", "🇳🇴", "nb-NO"], ["da", "Dat", "Dansk", "🇩🇰", "da-DK"], ["fi", "Fin", "Suomi", "🇫🇮", "fi-FI"], ["cs", "Chex", "Čeština", "🇨🇿", "cs-CZ"], ["sk", "Slovak", "Slovenčina", "🇸🇰", "sk-SK"], ["hu", "Venger", "Magyar", "🇭🇺", "hu-HU"], ["ro", "Rumin", "Română", "🇷🇴", "ro-RO"], ["bg", "Bolgar", "Български", "🇧🇬", "bg-BG"], ["sr", "Serb", "Српски", "🇷🇸", "sr-RS"], ["hr", "Xorvat", "Hrvatski", "🇭🇷", "hr-HR"], ["sl", "Sloven", "Slovenščina", "🇸🇮", "sl-SI"], ["lt", "Litva", "Lietuvių", "🇱🇹", "lt-LT"], ["lv", "Latish", "Latviešu", "🇱🇻", "lv-LV"], ["et", "Eston", "Eesti", "🇪🇪", "et-EE"], ["ka", "Gruzin", "ქართული", "🇬🇪", "ka-GE"], ["hy", "Arman", "Հայերեն", "🇦🇲", "hy-AM"], ["mn", "Mo'g'ul", "Монгол", "🇲🇳", "mn-MN"], ["ne", "Nepal", "नेपाली", "🇳🇵", "ne-NP"], ["ta", "Tamil", "தமிழ்", "🇮🇳", "ta-IN"], ["te", "Telugu", "తెలుగు", "🇮🇳", "te-IN"], ["sw", "Suaxili", "Kiswahili", "🇰🇪", "sw-KE"], ["af", "Afrikaans", "Afrikaans", "🇿🇦", "af-ZA"], ["la", "Lotin", "Latina", "🏛️", "la"], ["is", "Island", "Íslenska", "🇮🇸", "is-IS"], ["ga", "Irland", "Gaeilge", "🇮🇪", "ga-IE"], ["ca", "Katalan", "Català", "🏴", "ca-ES"], ["sq", "Alban", "Shqip", "🇦🇱", "sq-AL"], ["mk", "Makedon", "Македонски", "🇲🇰", "mk-MK"]].map(x=>({code:x[0],name:x[1],native:x[2],flag:x[3],tts:x[4]}));
 const LANGM=Object.fromEntries(LANGS.map(l=>[l.code,l]));
 const CEFR=['A1','A2','B1','B2','C1','C2'];
+const lgn=c=>{const l=LANGM[c||'ko']||LANGM.ko;return l.name+' tili ('+l.native+')'};
 for(const m0 of ["alter table words add column lang text default 'ko'","alter table dicts add column langs text default ''","create index if not exists words_lang on words(dict_id,lang)"])try{db.exec(m0)}catch{}
 
 const lvList=d=>{const m={};db.prepare('select level,name from lvnames where dict_id=?').all(d.id).forEach(r=>m[r.level]=r.name);return Array.from({length:d.levels||1},(_,i)=>({level:i+1,name:m[i+1]||DEFLV[i]||(i+1)+'-daraja'}))};
@@ -333,53 +334,78 @@ const GRM=[
 
 db.exec(`create table if not exists wex(id integer primary key autoincrement,word_id int,ko text,uz text);create index if not exists wex_w on wex(word_id);
 create table if not exists gex(id integer primary key autoincrement,gid int,ko text,uz text);create index if not exists gex_g on gex(gid);`);
-function parseEx(t){const out=[];t=String(t||'');let a=[];try{a=JSON.parse(t.match(/\[[\s\S]*\]/)[0])}catch{for(const m of t.match(/\{[^{}]*\}/g)||[])try{a.push(JSON.parse(m))}catch{}}
-  for(const o of a)if(o&&/[가-힣]/.test(o.ko||'')&&o.uz)out.push({ko:String(o.ko).trim().slice(0,160),uz:String(o.uz).trim().slice(0,200)});return out.slice(0,5)}
+function parseEx(t,lang){const out=[];t=String(t||'');let a=[];try{a=JSON.parse(t.match(/\[[\s\S]*\]/)[0])}catch{for(const m of t.match(/\{[^{}]*\}/g)||[])try{a.push(JSON.parse(m))}catch{}}
+  for(const o of a)if(o&&o.ko&&((lang&&lang!=='ko')||/[가-힣]/.test(o.ko||''))&&o.uz)out.push({ko:String(o.ko).trim().slice(0,160),uz:String(o.uz).trim().slice(0,200)});return out.slice(0,5)}
 // So'z kartochkasi uchun misol gaplar (bir marta AI yozadi, keyin bazadan beriladi)
 app.get('/api/wex/:id',async(r,s)=>{const id=+r.params.id;if(!id||id<1)return s.json([]);
   let a=q('select ko,uz from wex where word_id=? limit 12',id);
-  if(a.length<3){const w=one('select ko,uz from words where id=?',id);
-    if(w&&AI_KEY){try{const t=await callClaude([{role:'user',content:`Koreyscha so'z: «${w.ko}» (o'zbekcha: ${w.uz}). Shu so'zni ishlatib, TOPIK 1-2 darajasidagi 3 ta TURLI, oddiy va tabiiy koreys gapi yoz. Har birining o'zbekcha tarjimasi ham bo'lsin. FAQAT JSON qaytar: [{"ko":"...","uz":"..."}]`}],"Sen koreys tili o'qituvchisisan. Faqat JSON massiv qaytarasan.",600);
-      const n=parseEx(t);for(const e of n)run('insert into wex(word_id,ko,uz) values(?,?,?)',id,e.ko,e.uz);a=q('select ko,uz from wex where word_id=? limit 12',id)}catch(e){console.log('wex',e.message)}}}
+  if(a.length<3){const w=one('select ko,uz,lang from words where id=?',id);
+    if(w&&AI_KEY){try{const t=await callClaude([{role:'user',content:`${lgn(w.lang)} so'zi: «${w.ko}» (o'zbekcha: ${w.uz}). Shu so'zni ishlatib, A1-B1 darajasidagi 3 ta TURLI, oddiy va tabiiy gap yoz — gaplar FAQAT ${lgn(w.lang)}da, o'sha tilning o'z yozuvida va to'g'ri grammatika bilan bo'lsin ("ko" maydoniga shu til gapi yoziladi). "uz" — har gapning sof, to'g'ri o'zbek adabiy tilidagi (lotin yozuvi) tarjimasi; ruscha, inglizcha yoki boshqa tildagi so'z aralashtirma. FAQAT JSON qaytar: [{"ko":"...","uz":"..."}]`}],"Sen koreys tili o'qituvchisisan. Faqat JSON massiv qaytarasan.",600);
+      const n=parseEx(t,w.lang);for(const e of n)run('insert into wex(word_id,ko,uz) values(?,?,?)',id,e.ko,e.uz);a=q('select ko,uz from wex where word_id=? limit 12',id)}catch(e){console.log('wex',e.message)}}}
   s.json(a)});
 // Grammatika (pullik: obuna yoki bepul sinov)
 const gramGate=(r,s,n)=>active(r.u)?n():s.status(402).json({e:'pay'});
 db.exec(`create table if not exists gcustom(id integer primary key autoincrement,p text,l int,c text,m text,u text,ex text,created int)`);
+try{db.exec("alter table gcustom add column lang text default 'ko'")}catch{}
 const GBASE=100000;// admin qo'shgan grammatikalar ID si: GBASE + qator raqami (ichki grammatikalar bilan aralashmaydi)
-const customGram=()=>q('select * from gcustom order by id').map(r=>{let e=[];try{e=JSON.parse(r.ex||'[]')}catch{}return {id:GBASE+r.id,g:[r.p,r.l,r.c,r.m,r.u,e]}});
+const customGram=()=>q('select * from gcustom order by id').map(r=>{let e=[];try{e=JSON.parse(r.ex||'[]')}catch{}return {id:GBASE+r.id,g:[r.p,r.l,r.c,r.m,r.u,e,r.lang||'ko']}});
 const gramById=i=>i>=GBASE?((customGram().find(x=>x.id===i)||{}).g):GRM[i];
+app.get('/api/gram/langs',gramGate,(r,s)=>{const n={ko:GRM.length};customGram().forEach(x=>{const l=x.g[6]||'ko';n[l]=(n[l]||0)+1});
+  s.json(LANGS.map(l=>({code:l.code,name:l.name,native:l.native,flag:l.flag,n:n[l.code]||0})))});
 app.get('/api/gram',gramGate,(r,s)=>{const ex={};for(const e of q('select gid,ko,uz from gex'))(ex[e.gid]=ex[e.gid]||[]).push([e.ko,e.uz]);
-  const all=GRM.map((g,i)=>({id:i,g})).concat(customGram());
+  const GL=LANGM[r.query.lang]?r.query.lang:'ko',all=GRM.map((g,i)=>({id:i,g})).concat(customGram()).filter(x=>(x.g[6]||'ko')===GL);
   s.json({lv:GRM_LV,g:all.map(x=>({id:x.id,p:x.g[0],l:x.g[1],c:x.g[2],m:x.g[3],u:x.g[4],e:x.g[5].concat(ex[x.id]||[])}))})});
 app.post('/api/gram/more',gramGate,async(r,s)=>{const i=+r.body.id,g=gramById(i);if(!g)return s.status(400).json({e:'bad'});
   if(!AI_KEY)return s.json({e:"Sun'iy intellekt ulanmagan",ex:[]});
   try{const have=g[5].concat(q('select ko,uz from gex where gid=?',i).map(x=>[x.ko,x.uz])).map(x=>x[0]).join(' | ');
-    const t=await callClaude([{role:'user',content:`Koreys grammatikasi: «${g[0]}» — ${g[3]}. Qachon ishlatiladi: ${g[4]}\nShu grammatikani ishlatgan 3 ta YANGI, turli vaziyatdagi oddiy gap yoz (bular bo'lmasin: ${have}). Grammatik qismni {figurali qavs} ichiga ol. Tarjima o'zbekcha. FAQAT JSON: [{"ko":"...{...}...","uz":"..."}]`}],"Sen koreys tili o'qituvchisisan. Faqat JSON massiv qaytarasan.",700);
-    const n=parseEx(t).filter(e=>/\{.+\}/.test(e.ko));for(const e of n)run('insert into gex(gid,ko,uz) values(?,?,?)',i,e.ko,e.uz);
+    const t=await callClaude([{role:'user',content:`${lgn(g[6])} grammatikasi: «${g[0]}» — ${g[3]}. Qachon ishlatiladi: ${g[4]}\nShu grammatikani ishlatgan 3 ta YANGI, turli vaziyatdagi oddiy gap yoz (FAQAT shu tilning o'zida va o'z yozuvida; tarjima sof o'zbekcha) (bular bo'lmasin: ${have}). Grammatik qismni {figurali qavs} ichiga ol. Tarjima o'zbekcha. FAQAT JSON: [{"ko":"...{...}...","uz":"..."}]`}],"Sen koreys tili o'qituvchisisan. Faqat JSON massiv qaytarasan.",700);
+    const n=parseEx(t,g[6]).filter(e=>/\{.+\}/.test(e.ko));for(const e of n)run('insert into gex(gid,ko,uz) values(?,?,?)',i,e.ko,e.uz);
     s.json({ex:n.map(e=>[e.ko,e.uz])})}catch(e){s.json({e:'AI xatosi',ex:[]})}});
 // ===== Admin: yangi grammatika qo'shish (bo'lim, nomi, ma'nosi, qayerda ishlatilishi; misol gaplarni AI yozadi) =====
 app.get('/api/admin/gram',adm('dicts'),(r,s)=>{const cg=customGram();
-  s.json({lv:GRM_LV,cats:[...new Set(GRM.map(g=>g[2]).concat(cg.map(x=>x.g[2])))],items:cg.map(x=>({id:x.id,p:x.g[0],c:x.g[2],n:x.g[5].length}))})});
+  s.json({lv:GRM_LV,cats:[...new Set(GRM.map(g=>g[2]).concat(cg.map(x=>x.g[2])))],items:cg.map(x=>({id:x.id,p:x.g[0],c:x.g[2],n:x.g[5].length,lang:x.g[6]||'ko'}))})});
 app.post('/api/admin/gram',adm('dicts'),async(r,s)=>{
-  const b=r.body||{},cl=(v,n)=>String(v||'').replace(/[{}]/g,'').trim().slice(0,n);
+  const b=r.body||{},lang=LANGM[b.lang]?b.lang:'ko',cl=(v,n)=>String(v||'').replace(/[{}]/g,'').trim().slice(0,n);
   const p=cl(b.p,80),c=cl(b.c,60),l=Math.min(3,Math.max(1,+b.l||1));let m=cl(b.m,160),u=cl(b.u,500);
   if(!p||!c)return s.json({e:"Grammatika nomi va bo'limini kiriting"});
   if(!AI_KEY)return s.json({e:"Sun'iy intellekt ulanmagan — misol gaplarni yozib bo'lmaydi"});
-  try{const t=await callClaude([{role:'user',content:`Koreys grammatikasi: «${p}». Daraja: ${l} (1 boshlang'ich, 3 yuqori). Bo'lim: ${c}.${m?` Ma'nosi: ${m}.`:''}${u?` Qachon va qayerda ishlatiladi: ${u}.`:''}
+  try{const t=await callClaude([{role:'user',content:`${lgn(lang)} grammatikasi: «${p}». Daraja: ${l} (1 boshlang'ich, 3 yuqori). Bo'lim: ${c}.${m?` Ma'nosi: ${m}.`:''}${u?` Qachon va qayerda ishlatiladi: ${u}.`:''}
 Quyidagilarni yoz:
 "m" — grammatikaning qisqa o'zbekcha ma'nosi${m?' (foydalanuvchi yozgan, shuni o\'zgartirmay qaytar)':''},
 "u" — qachon va qayerda ishlatilishi, 1-2 gap, o'zbekcha${u?' (foydalanuvchi yozgan, shuni o\'zgartirmay qaytar)':''},
-"ex" — shu grammatikani ishlatgan 5 ta TURLI vaziyatdagi oddiy va tabiiy koreys gapi. Grammatik qismini {figurali qavs} ichiga ol. Har birining o'zbekcha tarjimasi bo'lsin.
+"ex" — shu grammatikani ishlatgan 5 ta TURLI vaziyatdagi oddiy va tabiiy gap, FAQAT shu tilning o'zida va o'z yozuvida ("ko" maydoni). Grammatik qismini {figurali qavs} ichiga ol. Tarjima ("uz") sof o'zbek adabiy tilida bo'lsin, boshqa til so'zlarini aralashtirma. Har birining o'zbekcha tarjimasi bo'lsin.
 Izohlar o'zbek tilida (lotin yozuvi). FAQAT JSON qaytar: {"m":"","u":"","ex":[{"ko":"...{...}...","uz":"..."}]}`}],"Sen koreys tili o'qituvchisisan. Faqat JSON qaytarasan.",1800);
     let o={};try{o=JSON.parse(String(t).match(/\{[\s\S]*\}/)[0])}catch{}
-    const ex=parseEx(JSON.stringify(o.ex||[])).filter(e=>/\{.+\}/.test(e.ko));
+    const ex=parseEx(JSON.stringify(o.ex||[]),lang).filter(e=>/\{.+\}/.test(e.ko));
     if(!ex.length)return s.json({e:"AI misol gaplarni yozib bera olmadi, qayta urinib ko'ring"});
     m=m||cl(o.m,160);u=u||cl(o.u,500);
-    const id=run('insert into gcustom(p,l,c,m,u,ex,created) values(?,?,?,?,?,?,?)',p,l,c,m,u,JSON.stringify(ex.map(e=>[e.ko,e.uz])),Date.now()).lastInsertRowid;
+    const id=run('insert into gcustom(p,l,c,m,u,ex,created,lang) values(?,?,?,?,?,?,?,?)',p,l,c,m,u,JSON.stringify(ex.map(e=>[e.ko,e.uz])),Date.now(),lang).lastInsertRowid;
     s.json({ok:1,id:GBASE+Number(id),n:ex.length,m,u})}
   catch(e){console.log('gram qo\'shish',String(e.message||e).slice(0,200));s.json({e:friendlyErr(e.message||e)})}});
 app.post('/api/admin/gram/del',adm('dicts'),(r,s)=>{const id=+r.body.id;if(!(id>GBASE))return s.status(400).json({e:'bad'});
   run('delete from gcustom where id=?',id-GBASE);run('delete from gex where gid=?',id);s.json({ok:1})});
+// ===== Tanlangan til uchun HAMMA grammatikani AI orqali yaratish (fonda) =====
+const gjobs={},clg=v=>String(v||'').replace(/[{}]/g,'').trim();
+async function genGramLang(lang,job){
+  const nm=lgn(lang),have=new Set(customGram().filter(x=>(x.g[6]||'ko')===lang).map(x=>x.g[0])),tops=[];
+  for(const [l,cnt] of [[1,25],[2,25],[3,20]]){job.stage=l+"-daraja mavzulari aniqlanmoqda...";
+    for(let a=0;a<2;a++){try{
+      const t=await callClaude([{role:'user',content:`${nm} grammatikasi bo'yicha ${l}-darajali (1 boshlang'ich, 2 o'rta, 3 yuqori) ${cnt} ta asosiy grammatika mavzusini ro'yxat qil: bu tilni o'rganuvchi bilishi kerak bo'lgan eng muhim qoidalar, shakllar, zamonlar, kelishiklar, artikl, so'z tartibi, bog'lovchilar, olmoshlar, inkor, so'roq va h.k. Har biri uchun: "p" — grammatika nomi/shakli (shu tilda yoki umumiy atamada), "c" — bo'lim nomi (o'zbekcha, qisqa, masalan: Zamonlar, Ot va artikl, Fe'l shakllari, Gap tuzilishi, Olmoshlar, Bog'lovchilar, Inkor va so'roq), "m" — o'zbekcha qisqa ma'nosi, "u" — qachon va qayerda ishlatilishi (1-2 gap, sof o'zbek adabiy tilida, boshqa til so'zlarisiz). FAQAT JSON massiv: [{"p":"","c":"","m":"","u":""}]`}],"Sen tajribali til o'qituvchisisan. Faqat JSON massiv qaytarasan.",6000);
+      for(const o of JSON.parse(String(t).match(/\[[\s\S]*\]/)[0]))if(o&&o.p&&o.c){const p=clg(o.p).slice(0,80);if(p&&!have.has(p)){have.add(p);tops.push({l,p,c:clg(o.c).slice(0,60),m:clg(o.m).slice(0,160),u:clg(o.u).slice(0,500)})}}
+      break}catch(e){job.err=friendlyErr(e.message||e)}}}
+  job.total=tops.length;let i=0;
+  const w=async()=>{while(i<tops.length){const g=tops[i++];
+    for(let a=0;a<2;a++){try{
+      const t=await callClaude([{role:'user',content:`${nm} grammatikasi: «${g.p}» — ${g.m}. Qachon ishlatiladi: ${g.u}\nShu grammatikani ishlatgan 5 ta turli vaziyatdagi oddiy va tabiiy gap yoz — FAQAT ${nm}da, o'zining yozuvida ("ko" maydoni). Grammatik qismini {figurali qavs} ichiga ol. "uz" — sof o'zbek adabiy tilidagi tarjima (lotin yozuvi), boshqa til so'zlarini aralashtirma. FAQAT JSON: [{"ko":"...{...}...","uz":"..."}]`}],"Sen tajribali til o'qituvchisisan. Faqat JSON massiv qaytarasan.",1500);
+      const ex=parseEx(t,lang).filter(e=>/\{.+\}/.test(e.ko));
+      if(ex.length){run('insert into gcustom(p,l,c,m,u,ex,created,lang) values(?,?,?,?,?,?,?,?)',g.p,g.l,g.c,g.m,g.u,JSON.stringify(ex.map(e=>[e.ko,e.uz])),Date.now(),lang);job.added++;break}}catch(e){await new Promise(z=>setTimeout(z,1500))}}
+    job.done++;job.stage="Misol gaplar yozilmoqda..."}};
+  await Promise.all(Array.from({length:4},w))}
+app.post('/api/admin/gram/auto',adm('dicts'),(r,s)=>{const lang=LANGM[r.body.lang]?r.body.lang:null;if(!lang)return s.json({e:'Til tanlanmadi'});if(!AI_KEY)return s.json({e:"Sun'iy intellekt ulanmagan"});
+  const o=gjobs[lang];if(o&&!o.fin)return s.json({ok:1});
+  const job=gjobs[lang]={stage:'Boshlandi',total:0,done:0,added:0,fin:false,err:null};
+  genGramLang(lang,job).catch(e=>{job.err=String(e.message||e)}).finally(()=>{job.fin=true;job.stage='Tayyor'});s.json({ok:1})});
+app.get('/api/admin/gram/auto/:lang',adm('dicts'),(r,s)=>s.json(gjobs[r.params.lang]||{none:1}));
 app.get('/api/rating',(r,s)=>s.json(q('select name,pts from scores where week=? order by pts desc limit 20',wk())));
 app.get('/api/plans',(r,s)=>s.json(q('select p.*,d.name dname from plans p left join dicts d on d.id=p.dict_id where coalesce(d.deleted,0)=0 order by p.dict_id,p.months')));
 app.get('/api/methods',(r,s)=>s.json(q('select * from methods where on_=1')));
@@ -474,7 +500,7 @@ app.post('/api/word-voice-uz/:id',async(r,s)=>{const w=one('select id,uz,audio_u
     s.json({audio:await p})}catch(e){s.json({e:'tts'})}});
 // Microsoft Edge ovozi (bepul, kalitsiz, o'zbekcha va koreyscha neyron ovozlar) — "ws" paketi socket.io bilan birga o'rnatilgan
 let WSM=null;try{WSM=require('ws')}catch{}
-const EDGE_TOKEN='6A5AA1D4EAFF4E9FB37E23D68491D6F4',EDGE_VER=process.env.EDGE_TTS_VER||'143.0.3650.75',EDGE_VOICE={ko:process.env.EDGE_VOICE_KO||'ko-KR-SunHiNeural',uz:process.env.EDGE_VOICE_UZ||'uz-UZ-MadinaNeural'};
+const EDGE_TOKEN='6A5AA1D4EAFF4E9FB37E23D68491D6F4',EDGE_VER=process.env.EDGE_TTS_VER||'143.0.3650.75',EDGE_VOICE={ko:process.env.EDGE_VOICE_KO||'ko-KR-SunHiNeural',uz:process.env.EDGE_VOICE_UZ||'uz-UZ-MadinaNeural',en:'en-US-JennyNeural',ja:'ja-JP-NanamiNeural',zh:'zh-CN-XiaoxiaoNeural',ru:'ru-RU-SvetlanaNeural',tr:'tr-TR-EmelNeural',ar:'ar-SA-ZariyahNeural',de:'de-DE-KatjaNeural',fr:'fr-FR-DeniseNeural',es:'es-ES-ElviraNeural',it:'it-IT-ElsaNeural',pt:'pt-PT-RaquelNeural',nl:'nl-NL-ColetteNeural',pl:'pl-PL-ZofiaNeural',uk:'uk-UA-PolinaNeural',kk:'kk-KZ-AigulNeural',az:'az-AZ-BanuNeural',fa:'fa-IR-DilaraNeural',hi:'hi-IN-SwaraNeural',ur:'ur-PK-UzmaNeural',bn:'bn-BD-NabanitaNeural',id:'id-ID-GadisNeural',ms:'ms-MY-YasminNeural',th:'th-TH-PremwadeeNeural',vi:'vi-VN-HoaiMyNeural',tl:'fil-PH-BlessicaNeural',he:'he-IL-HilaNeural',el:'el-GR-AthinaNeural',sv:'sv-SE-SofieNeural',no:'nb-NO-PernilleNeural',da:'da-DK-ChristelNeural',fi:'fi-FI-NooraNeural',cs:'cs-CZ-VlastaNeural',sk:'sk-SK-ViktoriaNeural',hu:'hu-HU-NoemiNeural',ro:'ro-RO-AlinaNeural',bg:'bg-BG-KalinaNeural',sr:'sr-RS-SophieNeural',hr:'hr-HR-GabrijelaNeural',sl:'sl-SI-PetraNeural',lt:'lt-LT-OnaNeural',lv:'lv-LV-EveritaNeural',et:'et-EE-AnuNeural',ka:'ka-GE-EkaNeural',hy:'hy-AM-AnahitNeural',mn:'mn-MN-YesuiNeural',ne:'ne-NP-HemkalaNeural',ta:'ta-IN-PallaviNeural',te:'te-IN-ShrutiNeural',sw:'sw-KE-ZuriNeural',af:'af-ZA-AdriNeural',is:'is-IS-GudrunNeural',ga:'ga-IE-OrlaNeural',ca:'ca-ES-JoanaNeural',sq:'sq-AL-AnilaNeural',mk:'mk-MK-MarijaNeural'};
 const edgeGec=()=>{let t=Math.floor(Date.now()/1000)+11644473600;t-=t%300;return crypto.createHash('sha256').update(String(BigInt(t)*10000000n)+EDGE_TOKEN,'ascii').digest('hex').toUpperCase()};
 const xmlEsc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 function edgeTts(text,voice,ver){ver=ver||EDGE_VER;return new Promise((res,rej)=>{
@@ -512,19 +538,20 @@ app.post('/api/fox-tts',async(r,s)=>{const k=foxKey(r.u,'tts'),cap=r.u.is_admin?
 app.post('/api/fox',async(r,s)=>{const k=foxKey(r.u,'chat');if((foxUse[k]||0)>=foxLimit(r.u,'chat'))return s.json({e:'limit',left:0});foxUse[k]=(foxUse[k]||0)+1;
   const ms=(r.body.messages||[]).filter(m=>m&&m.content);const o=await askFox(ms,Array.isArray(r.body.words)?r.body.words:[]);if(o.e==='api')foxUse[k]--;o.left=foxLeft(r.u,'chat');s.json(o)});
 // ===== Misol gap va tahlil ovozi: bir marta yasaladi va keshlanadi (Edge → Gemini → Google) =====
-async function edgeLong(t){const segs=ttsSegs(t,30);if(!segs.length)throw new Error('matn yoq');
+async function edgeLong(t,lang){const segs=(lang&&lang!=='ko')?(t.match(/[\s\S]{1,380}(?:\s|$)/g)||[t]).map(x=>[lang==='uz'?uzNorm(x.trim()):x.trim(),lang]).filter(x=>x[0]):ttsSegs(t,30);if(!segs.length)throw new Error('matn yoq');if(segs.some(x=>!EDGE_VOICE[x[1]]))throw new Error('edge ovozi yoq');
   const vers=[...new Set([edgeVerOk,EDGE_VER,'143.0.3650.75','130.0.2849.68','140.0.3485.14','120.0.2210.91'].filter(Boolean))];let le;
   for(const v of vers){try{const out=[];for(let i=0;i<segs.length;i+=6)out.push(...await Promise.all(segs.slice(i,i+6).map(([x,l])=>edgeTts(x,EDGE_VOICE[l],v))));edgeVerOk=v;return Buffer.concat(out)}catch(e){le=e;if(!/403|401|ws moduli/.test(String(e.message)))throw e}}throw le}
-async function textAudio(text,gate){
+async function gLangTts(t,lang){const c=((LANGM[lang]||{}).tts||'en').split('-')[0],tl=c==='zh'?'zh-CN':c;const parts=t.match(/[\s\S]{1,170}(?:\s|$)/g)||[t],bufs=[];for(const p of parts.slice(0,8))if(p.trim())bufs.push(await gTts(p.trim(),tl));return Buffer.concat(bufs)}
+async function textAudio(text,gate,lang){lang=(lang&&lang!=='ko'&&LANGM[lang])?lang:'';
   text=String(text||'').replace(/[{}*_#`]/g,'').replace(/\s+/g,' ').trim().slice(0,900);if(!text)throw new Error('matn yoq');
   fs.mkdirSync(DATA+'/audio/cache',{recursive:true});
-  const ck='t_'+crypto.createHash('sha1').update(text).digest('hex');
+  const ck='t_'+crypto.createHash('sha1').update((lang?lang+'|':'')+text).digest('hex');
   for(const x of ['mp3','wav'])if(fs.existsSync(DATA+'/audio/cache/'+ck+'.'+x))return 'cache/'+ck+'.'+x;
   if(gate)gate();
   let b=null,ext='mp3',le;
-  try{b=await edgeLong(text)}catch(e){le=e}
+  try{b=await edgeLong(text,lang)}catch(e){le=e}
   if(!b&&USE_GEMINI&&Date.now()>gemTtsOff){try{b=Buffer.from(await geminiTTSany(text),'base64');ext='wav'}catch(e){le=e;if(/quota|exceed|429|demand|404|not found/i.test(String(e.message)))gemTtsOff=Date.now()+30*60000}}
-  if(!b){try{b=await foxGoogleTts(text);ext='mp3'}catch(e){le=e}}
+  if(!b){try{b=(lang&&lang!=='uz')?await gLangTts(text,lang):await foxGoogleTts(text);ext='mp3'}catch(e){le=e}}
   if(!b||b.length<500)throw le||new Error('tts bosh');
   fs.writeFileSync(DATA+'/audio/cache/'+ck+'.'+ext,b);return 'cache/'+ck+'.'+ext}
 // ===== Qo'lda yozilgan ovozlar (matn bo'yicha): grammatika, misol gap, o'zbekcha/koreyscha matn =====
@@ -545,10 +572,10 @@ app.get('/api/admin/voice-gram',adm('import'),(r,s)=>{const ex={};for(const e of
 app.post('/api/admin/word/:id/audio-uz',adm('import'),up.single('audio'),(r,s)=>{const w=one('select * from words where id=?',r.params.id);if(!w||!r.file)return s.status(400).json({e:'bad'});
   const name='u'+w.id+'_'+Date.now()+'.'+audExt(r.file.mimetype||'');fs.renameSync(r.file.path,DATA+'/audio/'+name);
   if(w.audio_uz)try{fs.unlinkSync(DATA+'/audio/'+w.audio_uz)}catch{}run('update words set audio_uz=? where id=?',name,w.id);s.json({ok:1,audio_uz:name})});
-app.post('/api/say',async(r,s)=>{const t=String(r.body.text||'').trim().slice(0,900);if(!t)return s.json({e:'bad'});
+app.post('/api/say',async(r,s)=>{const t=String(r.body.text||'').trim().slice(0,900),lg=LANGM[r.body.lang]?r.body.lang:'';if(!t)return s.json({e:'bad'});
   const vo0=voOne(t);if(vo0)return s.json({audio:vo0});
   const k=foxKey(r.u,'say'),cap=r.u.is_admin?1e9:active(r.u)?500:80;
-  try{s.json({audio:await textAudio(t,()=>{if((foxUse[k]||0)>=cap)throw new Error('limit');foxUse[k]=(foxUse[k]||0)+1})})}
+  try{s.json({audio:await textAudio(t,()=>{if((foxUse[k]||0)>=cap)throw new Error('limit');foxUse[k]=(foxUse[k]||0)+1},lg)})}
   catch(e){console.error('say xato:',String(e.message||e).slice(0,200));s.json({e:/limit/.test(String(e.message))?'limit':'tts'})}});
 // Misol gapni so'zma-so'z tahlil qilish (bir marta AI yozadi, keyin bazadan beriladi)
 db.exec("create table if not exists wan(h text primary key,js text)");
@@ -559,9 +586,9 @@ app.post('/api/wex-tahlil',async(r,s)=>{
   const ko=String(r.body.ko||'').replace(/[{}]/g,'').trim().slice(0,160);if(!ko)return s.json({e:'bad'});
   const h=crypto.createHash('sha1').update(ko).digest('hex'),c=one('select js from wan where h=?',h);
   if(c){try{return s.json({a:JSON.parse(c.js)})}catch{}}
-  const ex=one('select uz from wex where ko=?',ko);if(!ex)return s.json({e:'bad'});
+  const ex=one('select e.uz,w.lang from wex e left join words w on w.id=e.word_id where e.ko=?',ko);if(!ex)return s.json({e:'bad'});
   if(!AI_KEY)return s.json({e:"Sun'iy intellekt ulanmagan"});
-  try{const t=await callClaude([{role:'user',content:`Koreys gapi: «${ko}» (o'zbekcha: ${ex.uz}).
+  try{const t=await callClaude([{role:'user',content:`${lgn(ex.lang)} gapi: «${ko}» (o'zbekcha: ${ex.uz}).
 Gapni so'zma-so'z tahlil qil: bo'sh joy bilan ajratilgan har bir bo'lak alohida, gapdagi tartibda. Har bir bo'lak uchun maydonlar:
 "w" — bo'lak hangulda (gapdagidek),
 "base" — lug'at shakli va tarkibi (masalan «가다 + -았어요» yoki «학교 + 에»),
@@ -570,7 +597,7 @@ Gapni so'zma-so'z tahlil qil: bo'sh joy bilan ajratilgan har bir bo'lak alohida,
 "tense" — zamon: o'tgan / hozirgi / kelasi / zamonga aloqasiz (ot, yuklama, ravish uchun «zamon yo'q»),
 "when" — shu grammatika yoki shakl umuman qaysi vaqt va vaziyatlarda ishlatiladi (1-2 gap),
 "where" — aynan shu gapda bu so'z qaysi vazifada kelgan: ega, to'ldiruvchi, kesim, hol va h.k. (1 gap).
-Barcha izoh o'zbek tilida (lotin yozuvi). Koreyscha so'z va qo'shimchalarni faqat hangulda yoz, lotincha o'qilishini yozma. Har maydon qisqa va aniq bo'lsin.
+Barcha izoh o'zbek tilida (lotin yozuvi). Chet tildagi so'z va qo'shimchalarni faqat shu tilning o'z yozuvida yoz, lotincha o'qilishini yozma. Izohlar sof o'zbek adabiy tilida bo'lsin. Har maydon qisqa va aniq bo'lsin.
 FAQAT JSON massiv qaytar: [{"w":"","base":"","mean":"","gram":"","tense":"","when":"","where":""}]`}],"Sen koreys tili o'qituvchisisan. Faqat JSON massiv qaytarasan.",2500);
     const a=parseAn(t);if(!a.length)throw new Error('bosh');
     run('insert or replace into wan(h,js) values(?,?)',h,JSON.stringify(a));s.json({a})}
