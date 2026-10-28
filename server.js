@@ -61,7 +61,7 @@ const wk=()=>Math.floor(Date.now()/(7*DAY));
 const addScore=(id,name,p)=>{if(p>0)run('insert into scores(user_id,name,week,pts) values(?,?,?,?) on conflict(user_id,week) do update set pts=pts+excluded.pts',id,name,wk(),p)};
 const app=express();app.use(express.json());app.get('/',(r,s)=>s.sendFile(__dirname+'/index.html'));app.use('/shots',express.static(DATA+'/uploads'));app.use('/audio',express.static(DATA+'/audio'));
 const up=multer({dest:DATA+'/uploads/',limits:{fileSize:25*1024*1024}}),upBig=multer({dest:DATA+'/uploads/',limits:{fileSize:2*1024*1024*1024}}),gc=GOOGLE_CLIENT_ID&&new OAuth2Client(GOOGLE_CLIENT_ID);
-app.get('/config',(r,s)=>s.json({google:GOOGLE_CLIENT_ID||null,dev:!!DEV,bot:BOT_USERNAME,fox:!!AI_KEY,voice:USE_GEMINI}));
+app.get('/config',(r,s)=>s.json({google:GOOGLE_CLIENT_ID||null,dev:!!DEV,bot:BOT_USERNAME,fox:!!AI_KEY,voice:USE_GEMINI,onevoice:process.env.ONE_VOICE!=='0'}));
 app.post('/auth/google',async(r,s)=>{try{const t=await gc.verifyIdToken({idToken:r.body.credential,audience:GOOGLE_CLIENT_ID}),p=t.getPayload();
   if(!p.email_verified)return s.status(401).json({e:'email'});const em=p.email.toLowerCase();
   let u=one('select * from users where email=?',em);
@@ -537,8 +537,8 @@ async function geminiTTSany(text){let le;const ms=[...new Set([TTSM,'gemini-3.8-
     if(/quota|exceed|429|rate|demand|overload|503|unavailable/i.test(t)){ttsDown[m]=Date.now()+(/demand|overload|503|unavailable/i.test(t)?30000:10*60000);continue}
     throw e}}
   throw le}
-let gemTtsOff=0;
-async function wordAudio(ko,lang){if(USE_GEMINI&&Date.now()>gemTtsOff){try{return {b:Buffer.from(await geminiTTSany(ko),'base64'),ext:'wav'}}catch(e){if(/quota|exceed|429|demand|404|not found/i.test(String(e.message)))gemTtsOff=Date.now()+30*60000}}
+const ONE_VOICE=process.env.ONE_VOICE!=='0';let gemTtsOff=0;
+async function wordAudio(ko,lang){if(ONE_VOICE){if(!USE_GEMINI||Date.now()<gemTtsOff)throw new Error('ovoz hozir mavjud emas');try{return {b:Buffer.from(await geminiTTSany(ko),'base64'),ext:'wav'}}catch(e){if(/quota|exceed|429|demand|404|not found/i.test(String(e.message)))gemTtsOff=Date.now()+30*60000;throw e}}if(USE_GEMINI&&Date.now()>gemTtsOff){try{return {b:Buffer.from(await geminiTTSany(ko),'base64'),ext:'wav'}}catch(e){if(/quota|exceed|429|demand|404|not found/i.test(String(e.message)))gemTtsOff=Date.now()+30*60000}}
   const r=await fetch('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl='+encodeURIComponent(((LANGM[lang||'ko']||{}).tts||'ko-KR').split('-')[0])+'&q='+encodeURIComponent(ko),{headers:{'user-agent':'Mozilla/5.0'},signal:AbortSignal.timeout(10000)});if(!r.ok)throw new Error('tts '+r.status);const b=Buffer.from(await r.arrayBuffer());if(b.length<500)throw new Error('tts bosh');return {b,ext:'mp3'}}
 const PENDING="⏳ tarjima kutilmoqda";let trBusy=0;
 async function trFill(){if(trBusy)return;trBusy=1;try{const rows=q("select id,ko from words where uz=? limit 80",PENDING);if(!rows.length)return;let o={};if(AI_KEY){try{o=await claudeTranslate(rows.map(x=>({ko:x.ko})))}catch{}}
@@ -558,7 +558,7 @@ const ttsBusy=new Map();
 app.post('/api/word-voice/:id',async(r,s)=>{const w=one('select id,ko,lang,audio from words where id=?',r.params.id);if(!w)return s.json({e:'yoq'});if(w.audio)return s.json({audio:w.audio});
   try{let p=ttsBusy.get(w.id);if(!p){p=(async()=>{const a=await wordAudio(w.ko,w.lang);const name='w'+w.id+'_'+Date.now()+'.'+a.ext;fs.writeFileSync(DATA+'/audio/'+name,a.b);run("update words set audio=? where id=? and (audio is null or audio='')",name,w.id);return one('select audio from words where id=?',w.id).audio})();ttsBusy.set(w.id,p);p.finally(()=>ttsBusy.delete(w.id)).catch(()=>{})}
     s.json({audio:await p})}catch(e){s.json({e:'tts'})}});
-async function wordAudioUz(text){text=String(text).replace(/⏳.*$/,'').trim().slice(0,120);if(!text)throw new Error('bosh');
+async function wordAudioUz(text){text=String(text).replace(/⏳.*$/,'').trim().slice(0,120);if(!text)throw new Error('bosh');if(ONE_VOICE){if(!USE_GEMINI)throw new Error('ovoz yoq');return {b:Buffer.from(await geminiTTSany(text),'base64'),ext:'wav'}}
   try{return {b:await edgeLong(text,''),ext:'mp3'}}catch{}
   const r=await fetch('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=uz&q='+encodeURIComponent(text),{headers:{'user-agent':'Mozilla/5.0'},signal:AbortSignal.timeout(10000)});if(!r.ok)throw new Error('tts '+r.status);const b=Buffer.from(await r.arrayBuffer());if(b.length<500)throw new Error('tts bosh');return {b,ext:'mp3'}}
 const uzBusy=new Map();
@@ -601,6 +601,7 @@ app.post('/api/fox-tts',async(r,s)=>{const k=foxKey(r.u,'tts'),cap=r.u.is_admin?
   fs.mkdirSync(DATA+'/audio/cache',{recursive:true});const ck=crypto.createHash('sha1').update(t).digest('hex'),cf=DATA+'/audio/cache/'+ck;
   try{if(fs.existsSync(cf+'.wav'))return s.json({a:fs.readFileSync(cf+'.wav').toString('base64')})}catch{}
   if(USE_GEMINI&&(foxUse[k]||0)<cap){foxUse[k]=(foxUse[k]||0)+1;try{const a=await geminiTTSany(t);try{fs.writeFileSync(cf+'.wav',Buffer.from(a,'base64'))}catch{}return s.json({a})}catch(e){foxUse[k]--;errs.push('gemini: '+friendlyErr(e.message||e).slice(0,80));console.error('fox-tts xato:',String(e.message||e).slice(0,300))}}
+  if(ONE_VOICE)return s.json({e:'tts',msg:errs.join(' | ')});
   try{s.json({a:(await foxGoogleTts(t)).toString('base64'),mime:'audio/mpeg'})}catch(e){errs.push('google: '+String(e.message||e).slice(0,60));console.error('fox-tts google xato:',errs.join(' | '));s.json({e:'tts',msg:errs.join(' | ')})}});
 app.post('/api/fox',async(r,s)=>{const k=foxKey(r.u,'chat');if((foxUse[k]||0)>=foxLimit(r.u,'chat'))return s.json({e:'limit',left:0});foxUse[k]=(foxUse[k]||0)+1;
   const ms=(r.body.messages||[]).filter(m=>m&&m.content);const o=await askFox(ms,Array.isArray(r.body.words)?r.body.words:[]);if(o.e==='api')foxUse[k]--;o.left=foxLeft(r.u,'chat');s.json(o)});
@@ -616,9 +617,9 @@ async function textAudio(text,gate,lang){lang=(lang&&lang!=='ko'&&LANGM[lang])?l
   for(const x of ['mp3','wav'])if(fs.existsSync(DATA+'/audio/cache/'+ck+'.'+x))return 'cache/'+ck+'.'+x;
   if(gate)gate();
   let b=null,ext='mp3',le;
-  try{b=await edgeLong(text,lang)}catch(e){le=e}
-  if(!b&&USE_GEMINI&&/[가-힣]/.test(text)&&Date.now()>gemTtsOff){try{b=Buffer.from(await geminiTTSany(text),'base64');ext='wav'}catch(e){le=e;if(/quota|exceed|429|demand|404|not found/i.test(String(e.message)))gemTtsOff=Date.now()+30*60000}}
-  if(!b){try{b=(lang&&lang!=='uz')?await gLangTts(text,lang):await foxGoogleTts(text);ext='mp3'}catch(e){le=e}}
+  if(!ONE_VOICE)try{b=await edgeLong(text,lang)}catch(e){le=e}
+  if(!b&&USE_GEMINI&&(ONE_VOICE||/[가-힣]/.test(text))&&Date.now()>gemTtsOff){try{b=Buffer.from(await geminiTTSany(text),'base64');ext='wav'}catch(e){le=e;if(/quota|exceed|429|demand|404|not found/i.test(String(e.message)))gemTtsOff=Date.now()+30*60000}}
+  if(!b&&!ONE_VOICE){try{b=(lang&&lang!=='uz')?await gLangTts(text,lang):await foxGoogleTts(text);ext='mp3'}catch(e){le=e}}
   if(!b||b.length<500)throw le||new Error('tts bosh');
   fs.writeFileSync(DATA+'/audio/cache/'+ck+'.'+ext,b);return 'cache/'+ck+'.'+ext}
 // ===== Qo'lda yozilgan ovozlar (matn bo'yicha): grammatika, misol gap, o'zbekcha/koreyscha matn =====
@@ -1151,4 +1152,9 @@ if(BOT_TOKEN){bot=new Telegraf(BOT_TOKEN);
   bot.launch().catch(console.error);
   bot.telegram.setChatMenuButton({menuButton:{type:'web_app',text:'Ochish',web_app:{url:WEBAPP_URL}}}).catch(()=>{})}
 
+setTimeout(()=>{try{if(!ONE_VOICE||one('select 1 from gmeta where k=?','onevoice'))return;
+  const del=f=>{try{fs.unlinkSync(DATA+'/audio/'+f)}catch{}};let n=0;
+  for(const w of q("select id,audio,audio_uz from words where audio like '%.mp3' or audio_uz like '%.mp3'")){if(/\.mp3$/.test(w.audio||'')){del(w.audio);run('update words set audio=null where id=?',w.id);n++}if(/\.mp3$/.test(w.audio_uz||'')){del(w.audio_uz);run("update words set audio_uz='' where id=?",w.id)}}
+  try{for(const f of fs.readdirSync(DATA+'/audio/cache'))if(/\.mp3$/.test(f))del('cache/'+f)}catch{}
+  run('insert or replace into gmeta(k,v) values(?,?)','onevoice','1');console.log('Bitta ovoz: eski boshqa ovozlar tozalandi:',n)}catch(e){console.error('onevoice',e)}},3000).unref();
 server.listen(PORT,()=>console.log('http://localhost:'+PORT));
