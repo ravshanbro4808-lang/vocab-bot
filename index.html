@@ -633,6 +633,44 @@ html body .gzq{margin:0 0 10px!important}
 .gzg{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;-webkit-overflow-scrolling:touch}html body .gzgm{flex:none;display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:999px;white-space:nowrap;border:1.5px solid var(--bd);background:var(--c);color:var(--fg);font-weight:700;font-size:14px}.gzgm em{font-style:normal}
 .gzi{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--c);border:1px solid var(--bd);border-left:6px solid var(--lc);border-radius:14px;padding:11px 14px;margin:8px 0;cursor:pointer}.gzi>div:first-child{flex:1;min-width:0}.gzi b{font-size:18px}.gzi small{display:block;color:var(--mu)}.gzx{display:flex;gap:8px;align-items:center;flex:none}.gzi:active{background:var(--soft)}
 .gzv{background:var(--c);border:1px solid var(--bd);border-top:6px solid var(--lc);border-radius:18px;padding:16px;margin:10px 0}.gzv h2{font-size:30px;margin:8px 0 2px}.gzv .mm{font-size:18px;font-weight:700;color:var(--pri)}
+/* ===== 3D • jonli ranglar • yumaloq tugmalar ===== */
+@keyframes aur{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+@keyframes flo{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(12vmax,8vmax) scale(1.15)}66%{transform:translate(-6vmax,14vmax) scale(.92)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes shn{0%{transform:translateX(-120%) skewX(-20deg)}60%,100%{transform:translateX(220%) skewX(-20deg)}}
+@keyframes stp{to{background-position:40px 0}}
+:root{--e1:#7b5cff;--e2:#e0508a;--e3:#f5a623;--e4:#17b2a6;--sh:rgba(40,30,110,.22)}
+html body{background:linear-gradient(125deg,#f4e8ff,#e1efff,#ffeedd,#dcfbec,#f4e8ff);background-size:400% 400%;animation:aur 24s ease infinite;background-attachment:fixed}
+@media(prefers-color-scheme:dark){html body{background:linear-gradient(125deg,#140f2e,#0c1c3a,#2a1130,#0b2a2a,#140f2e);background-size:400% 400%}}
+body::before,body::after{content:"";position:fixed;z-index:-1;width:55vmax;height:55vmax;border-radius:50%;filter:blur(70px);opacity:.38;pointer-events:none;animation:flo 20s ease-in-out infinite}
+body::before{left:-20vmax;top:-18vmax;background:radial-gradient(circle,var(--e1),transparent 70%)}
+body::after{right:-22vmax;bottom:-20vmax;background:radial-gradient(circle,var(--e2),transparent 70%);animation-delay:-9s}
+html body :is(.pt,.h2,.sec,.gzh h2){background:linear-gradient(90deg,var(--e1),var(--e2),var(--e3),var(--e1));background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:aur 8s linear infinite}
+/* kartalar: shishasimon 3D */
+html body :is(.card,.stats>div,.gzr,.gzi,.gzl,.gzv,.mas span){border-radius:28px;border:1px solid #ffffff99;background:linear-gradient(160deg,color-mix(in srgb,var(--c) 88%,#fff),var(--c));box-shadow:0 7px 0 var(--sh),0 18px 28px -10px var(--sh),inset 0 2px 0 #fff9;transition:transform .15s,box-shadow .15s}
+html body :is(.card,.gzr,.gzi,.gzl):active{transform:translateY(5px);box-shadow:0 2px 0 var(--sh),0 6px 12px -6px var(--sh),inset 0 3px 8px #0002}
+html body .card .em{border-radius:50%;box-shadow:0 4px 0 #0002,inset 0 2px 0 #fffa;animation:bob 3.2s ease-in-out infinite}
+/* katta bloklar: harakatdagi ranglar */
+html body :is(.hero,.sticker,.spk,.fl .f,.fl .k,.gl,.book:not([data-bc]),.tile:not([data-bc])){background-size:260% 260%!important;animation:aur 9s ease infinite;border-radius:34px;box-shadow:0 9px 0 rgba(0,0,0,.22),0 20px 30px -8px var(--sh),inset 0 3px 0 #ffffff66}
+html body .spk{border-radius:50%}html body .sticker,html body .fl :is(.f,.k){border-radius:46% 54% 50% 50%/55% 45% 55% 45%}
+html body :is(.hero,.sticker,.gl,.book,.tile)::after{content:"";position:absolute;inset:0;width:40%;background:linear-gradient(100deg,transparent,#ffffff40,transparent);animation:shn 5s ease-in-out infinite;pointer-events:none}
+html body :is(.book,.tile,.gl):active{transform:translateY(6px);box-shadow:0 2px 0 rgba(0,0,0,.22),0 6px 12px -6px var(--sh),inset 0 3px 8px #0003}
+html body .xp i,html body .pb i{background:repeating-linear-gradient(115deg,#fff 0 10px,#ffe29a 10px 20px)!important;background-size:40px 100%;animation:stp 1s linear infinite;box-shadow:0 0 12px #fff8}
+/* dock: yaltiroq shar-tugmalar */
+html body .dk i{border-radius:50%;width:58px;height:58px;box-shadow:0 7px 0 rgba(0,0,0,.25),0 14px 20px -6px var(--sh),inset 0 3px 0 #fff8,inset 0 -6px 10px #0003;transition:transform .12s,box-shadow .12s}
+html body .dk:active i{transform:translateY(6px) scale(.97);box-shadow:0 1px 0 rgba(0,0,0,.25),0 4px 8px -4px var(--sh),inset 0 4px 10px #0004}
+/* hamma tugmalar: yumaloq, 3D, bosilganda chuqurga tushadi */
+html body :is(.b,.pill,.lrn,.gold,.nxt,.big2,.cta button,.backpill,.cb,.lv,.opt2,.tl,.slot,.chip,.mc,label.chip){border-radius:999px;transition:transform .12s,box-shadow .12s,filter .12s}
+html body :is(.opt2,.lv,.backpill,.cb,.tl,.b.g,.g,.chip){border:1px solid #ffffffaa;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 85%,#fff),var(--c));box-shadow:0 6px 0 var(--sh),0 12px 18px -8px var(--sh),inset 0 2px 0 #fffb}
+html body :is(.opt2,.lv,.backpill,.cb,.tl,.b.g,.g,.chip):active{transform:translateY(5px);box-shadow:0 1px 0 var(--sh),0 3px 6px -3px var(--sh),inset 0 3px 8px #0002}
+html body :is(.pill,.lrn:not(.on),.gold,.lv.all){box-shadow:0 6px 0 #b7701a,0 12px 18px -6px #f5a62388,inset 0 2px 0 #fffa;background-size:200% 200%;animation:aur 6s ease infinite}
+html body .lrn.on{box-shadow:0 6px 0 #0d7a47,0 12px 18px -6px #17b26a88,inset 0 2px 0 #fff8}
+html body :is(.pill,.lrn,.gold,.nxt,.big2,.cta button,.b):not([data-bc]):active{transform:translateY(5px);box-shadow:0 1px 0 #0004,0 3px 8px -3px #0004,inset 0 3px 8px #0003!important}
+html body :is(.nxt,.big2):not([data-bc]){box-shadow:0 7px 0 #4b2fb8,0 16px 24px -8px #7b5cff88,inset 0 2px 0 #fff7;background-size:240% 240%;animation:aur 7s ease infinite}
+html body .cta button{box-shadow:0 7px 0 #b7701a,0 16px 24px -8px #e8993a99,inset 0 2px 0 #fff9}
+html body input,html body select{border-radius:999px;padding-left:18px;box-shadow:inset 0 3px 6px #0001,0 2px 0 #fff8}
+html body :is(.nxt,.big2,.cta button).dodge{animation:dodge .52s cubic-bezier(.3,1.4,.5,1) both!important}
+@media(prefers-reduced-motion:reduce){html body,body::before,body::after,html body *{animation-duration:.01ms!important;animation-iteration-count:1!important}}
 </style></head><body><div id="hd"></div><main id="m"></main>
 <script>
 try{localStorage.rm='0'}catch{}
@@ -649,15 +687,16 @@ const posName=p=>POS[p]||p;
 async function loadPos(){try{const a=await api('/poss');if(Array.isArray(a)&&a.length){POSL=a;POS={};a.forEach(x=>POS[x.key]=x.name)}}catch{}}
 S.lvn={};
 const lname=(d,l)=>((S.lvn[d]||[]).find(z=>z.level==l)||{}).name||(l+'-daraja');
-function pickVoice(l){try{const vs=speechSynthesis.getVoices()||[],f=x=>vs.find(v=>String(v.lang).toLowerCase().replace('_','-').startsWith(x));return l==='uz'?(f('uz')||f('tr')||f('ru')):f(l)}catch{return null}}
+function pickVoice(l){try{const vs=speechSynthesis.getVoices()||[],f=x=>vs.find(v=>String(v.lang).toLowerCase().replace('_','-').startsWith(x));return f(l)}catch{return null}}
 function uzNorm(t){return String(t||'').replace(/([oOgG])[\u2018\u2019\u02BB\u02BC\u0060\u00B4\u2032\u02B9']/g,'$1\u02BB').replace(/[\u2018\u2019\u02BC\u0060\u00B4\u2032\u02B9']/g,'\u02BC')}
 function uzTr(t){t=String(t||'').replace(/[\u2018\u2019\u02BB\u02BC\u0060\u00B4\u2032\u02B9]/g,"'").toLowerCase();
  return t.replace(/o'/g,'o').replace(/g'/g,'g').replace(/'/g,'').replace(/sh/g,'ş').replace(/ch/g,'ç').replace(/x/g,'h').replace(/q/g,'k').replace(/j/g,'c').replace(/w/g,'v')}
 function uzRu(t){t=String(t||'').replace(/[\u2018\u2019\u02BB\u02BC\u0060\u00B4\u2032\u02B9]/g,"'").toLowerCase();
  return t.replace(/o'/g,'о').replace(/g'/g,'г').replace(/yo/g,'ё').replace(/yu/g,'ю').replace(/ya/g,'я').replace(/sh/g,'ш').replace(/ch/g,'ч').replace(/ng/g,'нг').replace(/'/g,'').replace(/[a-z]/g,c=>({a:'а',b:'б',d:'д',e:'э',f:'ф',g:'г',h:'х',i:'и',j:'дж',k:'к',l:'л',m:'м',n:'н',o:'о',p:'п',q:'к',r:'р',s:'с',t:'т',u:'у',v:'в',x:'х',y:'й',z:'з'}[c]||c))}
-function uzFor(vo,t){const l=vo?String(vo.lang).toLowerCase():'';return l.startsWith('uz')?uzNorm(t):l.startsWith('ru')?uzRu(t):uzTr(t)}
-function speak(t,cb,lang){let d=0;const fin=()=>{if(d)return;d=1;clearTimeout(tm);if(cb)cb()},tm=setTimeout(fin,Math.max(4000,String(t).length*260));
- try{const vo=lang?pickVoice(lang):null,u=new SpeechSynthesisUtterance(lang==='uz'?uzFor(vo,t):t);u.lang=lang==='uz'?(vo?vo.lang:'tr-TR'):(vo?vo.lang:(((S.langs||[]).find(x=>x.code==lang)||{}).tts||'ko-KR'));if(vo)u.voice=vo;u.onend=u.onerror=fin;speechSynthesis.cancel();speechSynthesis.speak(u)}catch{fin()}}
+function uzFor(vo,t){return uzNorm(t)}
+function speak(t,cb,lang){if(lang==='uz'&&!pickVoice('uz')){srvAudio(t,'uz').then(f=>{if(f)playSrc('/audio/'+f,cb,()=>speakB(t,cb,lang));else speakB(t,cb,lang)},()=>speakB(t,cb,lang));return}return speakB(t,cb,lang)}
+function speakB(t,cb,lang){let d=0;const fin=()=>{if(d)return;d=1;clearTimeout(tm);if(cb)cb()},tm=setTimeout(fin,Math.max(4000,String(t).length*260));
+ try{const vo=lang?pickVoice(lang):null,u=new SpeechSynthesisUtterance(lang==='uz'?uzFor(vo,t):t);u.lang=lang==='uz'?(vo?vo.lang:'uz-UZ'):(vo?vo.lang:(((S.langs||[]).find(x=>x.code==lang)||{}).tts||'ko-KR'));if(vo)u.voice=vo;u.onend=u.onerror=fin;speechSynthesis.cancel();speechSynthesis.speak(u)}catch{fin()}}
 const AUD=new Audio(),SIL='data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';let audOk=0;
 // telefonda ovoz faqat "bosish" (click/touchend) paytida ochiladi; pointerdown sensorli ekranda hisoblanmaydi
 let MICST=null;
@@ -968,8 +1007,8 @@ async function foxSend(t){let sp=0;const f=S.fox;if(f.typing)return;const v=(t??
  f.typing=0;foxV();if(f.talk&&!sp)setTimeout(talkListen,500)}
 async function playB64(f,b64,onEnd,onErr,mime){f.audio={pause(){try{AUD.pause()}catch{}}};playSrc('data:'+(mime||'audio/wav')+';base64,'+b64,onEnd,onErr,120000)}
 function gSegs(t){t=t.replace(/\p{Extended_Pictographic}/gu,' ').replace(/\uFE0F/g,'');const segs=[];
- for(const m of t.matchAll(/([가-힣ㄱ-ㅎㅏ-ㅣ]+(?:[\s,.!?~·]+[가-힣ㄱ-ㅎㅏ-ㅣ]+)*)|([^가-힣ㄱ-ㅎㅏ-ㅣ]+)/g)){const x=m[0].replace(/\s+/g,' ').trim();if(!x||!/[\p{L}\p{N}]/u.test(x))continue;const lang=m[1]?'ko':'tr';
-  for(let i=0;i<x.length;i+=170){let e=Math.min(x.length,i+170);if(e<x.length){const sp=x.lastIndexOf(' ',e);if(sp>i+60)e=sp}segs.push([lang==='tr'?uzTr(x.slice(i,e).trim()):x.slice(i,e).trim(),lang]);i=e-170}}
+ for(const m of t.matchAll(/([가-힣ㄱ-ㅎㅏ-ㅣ]+(?:[\s,.!?~·]+[가-힣ㄱ-ㅎㅏ-ㅣ]+)*)|([^가-힣ㄱ-ㅎㅏ-ㅣ]+)/g)){const x=m[0].replace(/\s+/g,' ').trim();if(!x||!/[\p{L}\p{N}]/u.test(x))continue;const lang=m[1]?'ko':'uz';
+  for(let i=0;i<x.length;i+=170){let e=Math.min(x.length,i+170);if(e<x.length){const sp=x.lastIndexOf(' ',e);if(sp>i+60)e=sp}segs.push([x.slice(i,e).trim(),lang]);i=e-170}}
  return segs.slice(0,14)}
 function gSpeak(t,end,fail){const segs=gSegs(t);if(!segs.length)return fail();let k=0,any=0;
  const next=()=>{if(k>=segs.length)return end();const [x,l]=segs[k++];const q=encodeURIComponent(x),u1='https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl='+l+'&q='+q,u2='https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl='+l+'&q='+q;playSrc(u1,()=>{any=1;next()},()=>playSrc(u2,()=>{any=1;next()},()=>{if(any)next();else fail()},30000),30000)};next()}
@@ -989,7 +1028,7 @@ function foxSpeakLocal(i,cb,tk){const f=S.fox;let d=0,tm;
  try{const t=f.msgs[i].content.replace(/[*_#`]/g,''),ps=t.split(/([가-힣][가-힣\s]*)/).filter(x=>x.trim());speechSynthesis.cancel();
   if(!ps.length)return go();
   const vs=(speechSynthesis.getVoices&&speechSynthesis.getVoices())||[],pk=l=>vs.find(v=>String(v.lang).toLowerCase().replace('_','-').startsWith(l));
-  ps.forEach((p,k)=>{const ko=/[가-힣]/.test(p),vo=ko?pk('ko'):(pk('uz')||pk('tr')||pk('ru')),u=new SpeechSynthesisUtterance(ko?p:uzFor(vo,p));u.lang=vo?vo.lang:(ko?'ko-KR':'tr-TR');if(vo)u.voice=vo;u.rate=.95;if(k==ps.length-1){u.onend=go;u.onerror=go}speechSynthesis.speak(u)});
+  ps.forEach((p,k)=>{const ko=/[가-힣]/.test(p),vo=ko?pk('ko'):pk('uz'),u=new SpeechSynthesisUtterance(ko?p:uzFor(vo,p));u.lang=vo?vo.lang:(ko?'ko-KR':'uz-UZ');if(vo)u.voice=vo;u.rate=.95;if(k==ps.length-1){u.onend=go;u.onerror=go}speechSynthesis.speak(u)});
   tm=setTimeout(go,Math.min(45000,t.length*130+4000))}catch{go()}}
 const VT={listen:"🎙 Tinglayapman, gapiring",think:"💭 O'ylayapman...",speak:"🔊 Kori gapiryapti · to'xtatish uchun bosing",mute:"🔇 Mikrofon o'chiq"};
 function foxStop(){const f=S.fox;if(!f)return;f.spk=(f.spk||0)+1;f.speaking=0;try{f.audio&&f.audio.pause()}catch{}try{speechSynthesis.cancel()}catch{}spkUi();if(f.talk){stSet('🎙 ovozli suhbat','listen');talkListen()}}

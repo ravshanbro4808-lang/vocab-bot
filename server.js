@@ -559,7 +559,7 @@ app.post('/api/word-voice/:id',async(r,s)=>{const w=one('select id,ko,lang,audio
   try{let p=ttsBusy.get(w.id);if(!p){p=(async()=>{const a=await wordAudio(w.ko,w.lang);const name='w'+w.id+'_'+Date.now()+'.'+a.ext;fs.writeFileSync(DATA+'/audio/'+name,a.b);run("update words set audio=? where id=? and (audio is null or audio='')",name,w.id);return one('select audio from words where id=?',w.id).audio})();ttsBusy.set(w.id,p);p.finally(()=>ttsBusy.delete(w.id)).catch(()=>{})}
     s.json({audio:await p})}catch(e){s.json({e:'tts'})}});
 async function wordAudioUz(text){text=String(text).replace(/⏳.*$/,'').trim().slice(0,120);if(!text)throw new Error('bosh');
-  if(USE_GEMINI&&Date.now()>gemTtsOff){try{return {b:Buffer.from(await geminiTTSany(text),'base64'),ext:'wav'}}catch(e){if(/quota|exceed|429|demand|404|not found/i.test(String(e.message)))gemTtsOff=Date.now()+30*60000}}
+  try{return {b:await edgeLong(text,''),ext:'mp3'}}catch{}
   const r=await fetch('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=uz&q='+encodeURIComponent(text),{headers:{'user-agent':'Mozilla/5.0'},signal:AbortSignal.timeout(10000)});if(!r.ok)throw new Error('tts '+r.status);const b=Buffer.from(await r.arrayBuffer());if(b.length<500)throw new Error('tts bosh');return {b,ext:'mp3'}}
 const uzBusy=new Map();
 app.post('/api/word-voice-uz/:id',async(r,s)=>{const w=one('select id,uz,audio_uz from words where id=?',r.params.id);if(!w||!w.uz||w.uz===PENDING)return s.json({e:'yoq'});if(w.audio_uz)return s.json({audio:w.audio_uz});
@@ -593,8 +593,8 @@ async function foxEdgeTts(t){const segs=ttsSegs(t);if(!segs.length)throw new Err
 // Gemini ovozi bo'lmasa/limit tugasa: Google ovozi (koreyscha va o'zbekcha qismlar alohida o'qiladi)
 async function gTts(text,lang){let le;for(const u of ['https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=','https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=']){try{const r=await fetch(u+lang+'&q='+encodeURIComponent(text),{headers:{'user-agent':'Mozilla/5.0'},signal:AbortSignal.timeout(6000)});if(!r.ok)throw new Error('tts '+r.status);const b=Buffer.from(await r.arrayBuffer());if(b.length<300)throw new Error('tts bosh');return b}catch(e){le=e}}throw le}
 async function foxGoogleTts(t){t=t.replace(/\p{Extended_Pictographic}/gu,' ').replace(/\uFE0F/g,'');const segs=[];
-  for(const m of t.matchAll(/([가-힣ㄱ-ㅎㅏ-ㅣ]+(?:[\s,.!?~·]+[가-힣ㄱ-ㅎㅏ-ㅣ]+)*)|([^가-힣ㄱ-ㅎㅏ-ㅣ]+)/g)){const x=m[0].replace(/\s+/g,' ').trim();if(!x||!/[\p{L}\p{N}]/u.test(x))continue;const lang=m[1]?'ko':'tr';
-    for(let i=0;i<x.length;i+=170){let e=Math.min(x.length,i+170);if(e<x.length){const sp=x.lastIndexOf(' ',e);if(sp>i+60)e=sp}segs.push([lang==='tr'?uzTr(x.slice(i,e).trim()):x.slice(i,e).trim(),lang]);i=e-170}}
+  for(const m of t.matchAll(/([가-힣ㄱ-ㅎㅏ-ㅣ]+(?:[\s,.!?~·]+[가-힣ㄱ-ㅎㅏ-ㅣ]+)*)|([^가-힣ㄱ-ㅎㅏ-ㅣ]+)/g)){const x=m[0].replace(/\s+/g,' ').trim();if(!x||!/[\p{L}\p{N}]/u.test(x))continue;const lang=m[1]?'ko':'uz';
+    for(let i=0;i<x.length;i+=170){let e=Math.min(x.length,i+170);if(e<x.length){const sp=x.lastIndexOf(' ',e);if(sp>i+60)e=sp}segs.push([x.slice(i,e).trim(),lang]);i=e-170}}
   if(!segs.length)throw new Error('matn yoq');const bufs=[];for(const [x,l] of segs.slice(0,14))bufs.push(await gTts(x,l));return Buffer.concat(bufs)}
 app.post('/api/fox-tts',async(r,s)=>{const k=foxKey(r.u,'tts'),cap=r.u.is_admin?1e9:active(r.u)?400:60,errs=[];
   const t=String(r.body.text||'').replace(/[*_#`]/g,'').trim().slice(0,600);if(!t)return s.json({e:'tts'});
@@ -617,7 +617,7 @@ async function textAudio(text,gate,lang){lang=(lang&&lang!=='ko'&&LANGM[lang])?l
   if(gate)gate();
   let b=null,ext='mp3',le;
   try{b=await edgeLong(text,lang)}catch(e){le=e}
-  if(!b&&USE_GEMINI&&Date.now()>gemTtsOff){try{b=Buffer.from(await geminiTTSany(text),'base64');ext='wav'}catch(e){le=e;if(/quota|exceed|429|demand|404|not found/i.test(String(e.message)))gemTtsOff=Date.now()+30*60000}}
+  if(!b&&USE_GEMINI&&/[가-힣]/.test(text)&&Date.now()>gemTtsOff){try{b=Buffer.from(await geminiTTSany(text),'base64');ext='wav'}catch(e){le=e;if(/quota|exceed|429|demand|404|not found/i.test(String(e.message)))gemTtsOff=Date.now()+30*60000}}
   if(!b){try{b=(lang&&lang!=='uz')?await gLangTts(text,lang):await foxGoogleTts(text);ext='mp3'}catch(e){le=e}}
   if(!b||b.length<500)throw le||new Error('tts bosh');
   fs.writeFileSync(DATA+'/audio/cache/'+ck+'.'+ext,b);return 'cache/'+ck+'.'+ext}
