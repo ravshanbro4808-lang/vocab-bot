@@ -695,6 +695,16 @@ html body .exk{font-weight:800}
 html body .tiles .tile em,html body .gl em,html body .card .em{border-radius:50%}
 </style></head><body><div id="hd"></div><main id="m"></main>
 <script>
+(function(){var t0=Date.now();
+function box(m){var x=document.getElementById('m');if(!x||x.innerHTML.replace(/\s/g,''))return;
+ m=String(m).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]});
+ x.innerHTML='<div class="card" style="display:block"><b>Xatolik yuz berdi</b><p class="s" style="word-break:break-word;margin:8px 0">'+m+'</p><button class="nxt" onclick="location.reload()">Qayta urinish</button></div>'}
+window.__box=box;
+window.addEventListener('error',function(e){box((e.message||'xato')+(e.lineno?' (qator '+e.lineno+')':''))});
+window.addEventListener('unhandledrejection',function(e){if(e.reason===0)return;box((e.reason&&e.reason.message)||e.reason||'noma\'lum xato')});
+setTimeout(function(){box('Sahifa 8 soniyada yuklanmadi. Server javob bermayapti yoki internet sekin. Qayta urinib ko\'ring.')},8000)})();
+</script>
+<script>
 try{localStorage.rm='0'}catch{}
 const tg=window.Telegram?.WebApp;tg?.ready();tg?.expand();tg?.BackButton?.hide();
 const dev=new URLSearchParams(location.search).get('dev');let me,S={hist:[],cfg:{}};
@@ -749,7 +759,7 @@ function leave(){clearInterval(S.ti);if(S.hist.length&&S.hist[S.hist.length-1][0
 async function login(){const c=await (await fetch('/config')).json();head('');H(`<div class=hero><i class=kr>👋</i><small>Assalomu alaykum!</small><h2>🌍 Tillar lug'ati</h2></div><div class=card><div>Davom etish uchun Google orqali kiring<div id=gb style="margin-top:10px"></div></div></div>${c.dev?'<p class=s>DEV: ?dev=ID bilan oching</p>':''}`);
   if(!c.google)return $('#gb').textContent='GOOGLE_CLIENT_ID sozlanmagan';
   const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=()=>{google.accounts.id.initialize({client_id:c.google,callback:async r=>{const x=await (await fetch('/auth/google',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({credential:r.credential})})).json();if(x.token){localStorage.tok=x.token;init()}else alert('Kirish xatosi')}});google.accounts.id.renderButton($('#gb'),{theme:'outline',size:'large',text:'continue_with'})};document.body.appendChild(s)}
-async function init(){try{me=await api('/me')}catch{return}await loadPos();S.cfg=await fetch('/config').then(r=>r.json()).catch(()=>({}));S.hist=[[home,[]]];await home();
+async function init(){try{me=await api('/me')}catch(e){if(e!==0)window.__box('Serverga ulanib bo\'lmadi: '+((e&&e.message)||e));return}if(!me||me.e||me.id==null){window.__box('Server xatosi: '+((me&&me.e)||'javob bo\'sh'));return}await loadPos();S.cfg=await fetch('/config').then(r=>r.json()).catch(()=>({}));S.hist=[[home,[]]];await home();
   if(me.paid_until>0&&!me.active&&!me.is_admin)setTimeout(()=>sheet("⏰ Obuna muddatingiz tugadi. Davom etish uchun yangilang."),500)}
 // ---------- bosh sahifa
 const LVN={b:"🌱 Boshlang'ich",o:"📘 O'rta",y:"🚀 Yuqori",all:"🌐 Hammasi"};
