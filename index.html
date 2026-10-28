@@ -716,6 +716,11 @@ async function api(p,o={}){const h={'x-init':tg?.initData||'','x-dev':dev||''},t
 const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let POS={ot:'Ot',fel:"Fe'l",sifat:'Sifat',ravish:'Ravish',olmosh:'Olmosh',son:'Son',yordamchi:'Yordamchi'},POSL=[];
 const posName=p=>POS[p]||p;
+const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const has=p=>!!me&&(me.is_admin==2||(me.is_admin==1&&String(me.perms||'').split(',').includes(p)));
+const D=t=>{if(!t)return '—';const d=new Date(t),z=n=>String(n).padStart(2,'0');return z(d.getDate())+'.'+z(d.getMonth()+1)+'.'+d.getFullYear()};
+const PLBL={dicts:"Kitoblar va so'zlar",import:'Fayl yuklash',tasks:'Vazifalar',payments:"To'lovlar",trials:'Sinov muddati',users:'Foydalanuvchilar',plans:'Tariflar',methods:'Metodlar',admins:'Adminlar'};
+const permBoxes=(cls,sel)=>((me&&me.PERMS)||[]).map(k=>`<label class=chip style="display:inline-block;margin:3px"><input type=checkbox class="${cls}" value="${k}" ${(sel||[]).includes(k)?'checked':''}> ${PLBL[k]||k}</label>`).join('');
 async function loadPos(){try{const a=await api('/poss');if(Array.isArray(a)&&a.length){POSL=a;POS={};a.forEach(x=>POS[x.key]=x.name)}}catch{}}
 S.lvn={};
 const lname=(d,l)=>((S.lvn[d]||[]).find(z=>z.level==l)||{}).name||(l+'-daraja');

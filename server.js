@@ -61,7 +61,7 @@ const wk=()=>Math.floor(Date.now()/(7*DAY));
 const addScore=(id,name,p)=>{if(p>0)run('insert into scores(user_id,name,week,pts) values(?,?,?,?) on conflict(user_id,week) do update set pts=pts+excluded.pts',id,name,wk(),p)};
 const app=express();app.use(express.json());app.get('/',(r,s)=>s.sendFile(__dirname+'/index.html'));app.use('/shots',express.static(DATA+'/uploads'));app.use('/audio',express.static(DATA+'/audio'));
 const up=multer({dest:DATA+'/uploads/',limits:{fileSize:25*1024*1024}}),upBig=multer({dest:DATA+'/uploads/',limits:{fileSize:2*1024*1024*1024}}),gc=GOOGLE_CLIENT_ID&&new OAuth2Client(GOOGLE_CLIENT_ID);
-app.get('/config',(r,s)=>s.json({google:GOOGLE_CLIENT_ID||null,dev:!!DEV,bot:BOT_USERNAME,fox:!!AI_KEY,voice:USE_GEMINI,onevoice:process.env.ONE_VOICE!=='0'}));
+app.get('/config',(r,s)=>s.json({google:GOOGLE_CLIENT_ID||null,dev:!!DEV,bot:BOT_USERNAME,fox:!!AI_KEY,voice:USE_GEMINI,onevoice:process.env.ONE_VOICE==='1'}));
 app.post('/auth/google',async(r,s)=>{try{const t=await gc.verifyIdToken({idToken:r.body.credential,audience:GOOGLE_CLIENT_ID}),p=t.getPayload();
   if(!p.email_verified)return s.status(401).json({e:'email'});const em=p.email.toLowerCase();
   let u=one('select * from users where email=?',em);
@@ -537,7 +537,7 @@ async function geminiTTSany(text){let le;const ms=[...new Set([TTSM,'gemini-3.8-
     if(/quota|exceed|429|rate|demand|overload|503|unavailable/i.test(t)){ttsDown[m]=Date.now()+(/demand|overload|503|unavailable/i.test(t)?30000:10*60000);continue}
     throw e}}
   throw le}
-const ONE_VOICE=process.env.ONE_VOICE!=='0';let gemTtsOff=0;
+const ONE_VOICE=process.env.ONE_VOICE==='1';let gemTtsOff=0;
 async function wordAudio(ko,lang){if(ONE_VOICE){if(!USE_GEMINI||Date.now()<gemTtsOff)throw new Error('ovoz hozir mavjud emas');try{return {b:Buffer.from(await geminiTTSany(ko),'base64'),ext:'wav'}}catch(e){if(/quota|exceed|429|demand|404|not found/i.test(String(e.message)))gemTtsOff=Date.now()+30*60000;throw e}}if(USE_GEMINI&&Date.now()>gemTtsOff){try{return {b:Buffer.from(await geminiTTSany(ko),'base64'),ext:'wav'}}catch(e){if(/quota|exceed|429|demand|404|not found/i.test(String(e.message)))gemTtsOff=Date.now()+30*60000}}
   const r=await fetch('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl='+encodeURIComponent(((LANGM[lang||'ko']||{}).tts||'ko-KR').split('-')[0])+'&q='+encodeURIComponent(ko),{headers:{'user-agent':'Mozilla/5.0'},signal:AbortSignal.timeout(10000)});if(!r.ok)throw new Error('tts '+r.status);const b=Buffer.from(await r.arrayBuffer());if(b.length<500)throw new Error('tts bosh');return {b,ext:'mp3'}}
 const PENDING="⏳ tarjima kutilmoqda";let trBusy=0;
