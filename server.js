@@ -599,9 +599,10 @@ async function foxGoogleTts(t){t=t.replace(/\p{Extended_Pictographic}/gu,' ').re
 app.post('/api/fox-tts',async(r,s)=>{const k=foxKey(r.u,'tts'),cap=r.u.is_admin?1e9:active(r.u)?400:60,errs=[];
   const t=String(r.body.text||'').replace(/[*_#`]/g,'').trim().slice(0,600);if(!t)return s.json({e:'tts'});
   fs.mkdirSync(DATA+'/audio/cache',{recursive:true});const ck=crypto.createHash('sha1').update(t).digest('hex'),cf=DATA+'/audio/cache/'+ck;
-  try{if(fs.existsSync(cf+'.wav'))return s.json({a:fs.readFileSync(cf+'.wav').toString('base64')})}catch{}
-  if(USE_GEMINI&&(foxUse[k]||0)<cap){foxUse[k]=(foxUse[k]||0)+1;try{const a=await geminiTTSany(t);try{fs.writeFileSync(cf+'.wav',Buffer.from(a,'base64'))}catch{}return s.json({a})}catch(e){foxUse[k]--;errs.push('gemini: '+friendlyErr(e.message||e).slice(0,80));console.error('fox-tts xato:',String(e.message||e).slice(0,300))}}
+  try{if(fs.existsSync(cf+'.wav'))return s.json({a:fs.readFileSync(cf+'.wav').toString('base64')});if(!ONE_VOICE&&fs.existsSync(cf+'.mp3'))return s.json({a:fs.readFileSync(cf+'.mp3').toString('base64'),mime:'audio/mpeg'})}catch{}
+  if(USE_GEMINI&&Date.now()>gemTtsOff&&(foxUse[k]||0)<cap){foxUse[k]=(foxUse[k]||0)+1;try{const a=await geminiTTSany(t);try{fs.writeFileSync(cf+'.wav',Buffer.from(a,'base64'))}catch{}return s.json({a})}catch(e){foxUse[k]--;if(/quota|exceed|429|demand|404|not found/i.test(String(e.message||e)))gemTtsOff=Date.now()+30*60000;errs.push('gemini: '+friendlyErr(e.message||e).slice(0,80));console.error('fox-tts xato:',String(e.message||e).slice(0,300))}}
   if(ONE_VOICE)return s.json({e:'tts',msg:errs.join(' | ')});
+  try{const eb=await edgeLong(t,'');try{fs.writeFileSync(cf+'.mp3',eb)}catch{}return s.json({a:eb.toString('base64'),mime:'audio/mpeg'})}catch(e){errs.push('edge: '+String(e.message||e).slice(0,60));console.error('fox-tts edge xato:',String(e.message||e).slice(0,200))}
   try{s.json({a:(await foxGoogleTts(t)).toString('base64'),mime:'audio/mpeg'})}catch(e){errs.push('google: '+String(e.message||e).slice(0,60));console.error('fox-tts google xato:',errs.join(' | '));s.json({e:'tts',msg:errs.join(' | ')})}});
 app.post('/api/fox',async(r,s)=>{const k=foxKey(r.u,'chat');if((foxUse[k]||0)>=foxLimit(r.u,'chat'))return s.json({e:'limit',left:0});foxUse[k]=(foxUse[k]||0)+1;
   const ms=(r.body.messages||[]).filter(m=>m&&m.content);const o=await askFox(ms,Array.isArray(r.body.words)?r.body.words:[]);if(o.e==='api')foxUse[k]--;o.left=foxLeft(r.u,'chat');s.json(o)});
