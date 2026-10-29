@@ -788,7 +788,7 @@ async function geminiVoice(hist,system,audio){
   while(cs.length&&cs[0].role==='model')cs.shift();
   const au={inlineData:{mimeType:'audio/wav',data:audio.toString('base64')}};
   if(cs.length&&cs[cs.length-1].role==='user')cs[cs.length-1].parts.push(au);else cs.push({role:'user',parts:[au]});
-  const cfg=gcfg(FOXM,700,1);cfg.responseMimeType='application/json';
+  const cfg=gcfg(FOXM,700,1);if(cfg.thinkingConfig&&/gemini-3/i.test(FOXM)&&process.env.GEMINI_VOICE_THINK!=='low')cfg.thinkingConfig.thinkingLevel='minimal';cfg.responseMimeType='application/json';
   return geminiRaw(cs,system,cfg)}
 async function aiWords(items,txt,vis,defPos,auto,job){
   const kL=txt.split(/\n/).filter(l=>/[가-힣]/.test(l)).length,good=items.filter(i=>i.uz).length;

@@ -1082,7 +1082,7 @@ function vcOpen(){if($('#vc'))return;const d=document.createElement('div');d.id=
 function vcSync(){const f=S.fox,u=$('#vcu'),a=$('#vcf');if(!f||!u||!a)return;let lu='',la='';for(let i=f.msgs.length-1;i>=0&&(!lu||!la);i--){const m=f.msgs[i];if(m.role=='user'){if(!lu)lu=m.content}else if(!la)la=m.content}
  u.textContent=lu?'«'+lu+'»':'';a.textContent=la}
 function vcMute(){const f=S.fox;if(!f)return;f.muted=!f.muted;const b=$('#vmu');if(b){b.classList.toggle('off',!!f.muted);b.textContent=f.muted?'🔇':'🎙'}
- if(f.muted){if(f.rec&&f.sendNow)f.sendNow();else if(f.cur)f.cur();if(f.rec||f.typing||f.speaking)f.endAfter=1;stSet('','mute')}else{f.endAfter=0;stSet('','listen');talkListen()}}
+ if(f.muted){if(f.rec&&f.sendNow)f.sendNow();else if(f.cur)f.cur();if(f.rec||f.typing||f.speaking)f.endAfter=1;stSet('','mute')}else{f.endAfter=0;stSet('','listen');if(f.rec&&f.cur)f.cur();try{f.ac&&f.ac.resume()}catch{}setTimeout(talkListen,50)}}
 function vcTap(){const f=S.fox;if(f&&f.speaking){f.spk=(f.spk||0)+1;f.speaking=0;try{speechSynthesis.cancel()}catch{}stSet('','listen');talkListen()}}
 function wav16(ch,sr){let n=0;ch.forEach(c=>n+=c.length);const a=new Float32Array(n);let o=0;ch.forEach(c=>{a.set(c,o);o+=c.length});
  const r=sr/16000,m=Math.floor(n/r),d=new DataView(new ArrayBuffer(44+m*2)),w=(p,t)=>{for(let i=0;i<t.length;i++)d.setUint8(p+i,t.charCodeAt(i))};
@@ -1103,7 +1103,7 @@ async function talkListen(){const f=S.fox;if(f&&f.talk&&f.endAfter&&!f.typing&&!
   try{x.start()}catch{f.rec=0}return}
  try{if(f.st&&!f.st.getTracks().some(t=>t.readyState==='live'))f.st=null;f.st=await getMic();micMute(f,0)}catch{stopTalk();return alert("Mikrofonga ruxsat berilmadi. Telefon sozlamalarida Telegram uchun mikrofonni yoqing.")}
  const AC=window.AudioContext||window.webkitAudioContext,ac=f.ac=f.ac||new AC();try{await ac.resume()}catch{}
- if(!f.talk||f.rec)return;
+ if(!f.talk||f.rec||f.muted||f.typing||f.speaking)return;micMute(f,0);
  const src=ac.createMediaStreamSource(f.st),pr=ac.createScriptProcessor(4096,1,1),g=ac.createGain(),ch=[];g.gain.value=0;
  let vc=0,talked=0,done=0,t0=Date.now(),last=t0;f.rec=1;stSet('🎙 Tinglayapman...','listen');
  const fin=send=>{if(done)return;done=1;f.rec=0;f.cur=null;f.sendNow=null;pr.onaudioprocess=null;try{pr.disconnect();src.disconnect();g.disconnect()}catch{}
