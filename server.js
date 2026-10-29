@@ -604,6 +604,14 @@ app.post('/api/fox-tts',async(r,s)=>{const k=foxKey(r.u,'tts'),cap=r.u.is_admin?
   if(ONE_VOICE)return s.json({e:'tts',msg:errs.join(' | ')});
   try{const eb=await edgeLong(t,'');try{fs.writeFileSync(cf+'.mp3',eb)}catch{}return s.json({a:eb.toString('base64'),mime:'audio/mpeg'})}catch(e){errs.push('edge: '+String(e.message||e).slice(0,60));console.error('fox-tts edge xato:',String(e.message||e).slice(0,200))}
   try{s.json({a:(await foxGoogleTts(t)).toString('base64'),mime:'audio/mpeg'})}catch(e){errs.push('google: '+String(e.message||e).slice(0,60));console.error('fox-tts google xato:',errs.join(' | '));s.json({e:'tts',msg:errs.join(' | ')})}});
+app.post('/api/fox-diag',async(r,s)=>{const st=[],add=(n,ok,m)=>st.push({n,ok:!!ok,m:m?String(m).slice(0,140):''});
+  add('GEMINI_API_KEY',USE_GEMINI,USE_GEMINI?'':"o'rnatilmagan: ovoz eshitish ham, Gemini ovozi ham ishlamaydi");add('ONE_VOICE o\'chiq',!ONE_VOICE,ONE_VOICE?"yoqilgan: zaxira ovozlar o'chiq":'');
+  add('ws moduli (Edge ovozi)',!!WSM,WSM?'':'npm i ws kerak');
+  if(USE_GEMINI){try{const t=await callClaude([{role:'user',content:'Salom deb yoz'}],'Qisqa javob ber',60);add('Gemini matn ('+FOXM+')',!!t)}catch(e){add('Gemini matn ('+FOXM+')',0,friendlyErr(e.message||e))}
+    try{const a=await geminiTTSany('Salom');add('Gemini ovoz (TTS)',!!a)}catch(e){add('Gemini ovoz (TTS)',0,friendlyErr(e.message||e))}}
+  try{const b=await edgeLong('Salom','uz');add("Edge ovozi (o'zbekcha)",b&&b.length>500)}catch(e){add("Edge ovozi (o'zbekcha)",0,e.message||e)}
+  try{const b=await foxGoogleTts('Salom');add('Google ovozi',b&&b.length>500)}catch(e){add('Google ovozi',0,e.message||e)}
+  s.json({steps:st})});
 app.post('/api/fox',async(r,s)=>{const k=foxKey(r.u,'chat');if((foxUse[k]||0)>=foxLimit(r.u,'chat'))return s.json({e:'limit',left:0});foxUse[k]=(foxUse[k]||0)+1;
   const ms=(r.body.messages||[]).filter(m=>m&&m.content);const o=await askFox(ms,Array.isArray(r.body.words)?r.body.words:[]);if(o.e==='api')foxUse[k]--;o.left=foxLeft(r.u,'chat');s.json(o)});
 // ===== Misol gap va tahlil ovozi: bir marta yasaladi va keshlanadi (Edge → Gemini → Google) =====

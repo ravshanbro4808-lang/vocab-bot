@@ -1025,7 +1025,7 @@ function foxChat(words,q){head('Tulki Kori','back()');
  if(!S.fox||words){try{S.fox&&S.fox.st&&S.fox.st.getTracks().forEach(t=>t.enabled=false)}catch{}S.fox={msgs:[{role:'assistant',content:words?"Salom! Men Kori 🦊. Keling, shu so'zlarni mashq qilamiz!":"Assalomu alaykum! Men Kori 🦊 — til lug'atlari yordamchingizman. Menga xohlagan savol bering: so'z, grammatika, talaffuz yoki oddiy suhbat!"}],words:words||[],lang:'uz-UZ',auto:1,tlc:(words&&words[0]&&words[0].lang)||S.lastLang||'en'}}
  foxV();if(q&&words)setTimeout(()=>foxSend(q),100)}
 function foxV(){const f=S.fox;H(`<div class=fxw><div class=fxh><i>🦊</i><div><b>Kori</b><div class=s>${f.typing?'yozmoqda...':f.talk?'<span id=fst>'+esc(f.status||'🎙 ovozli suhbat')+'</span>':f.lite&&me.is_admin?"⚠️ cheklangan rejim: GEMINI_API_KEY qo'shing":f.lite?"lug'at rejimi":'onlayn'}</div></div>${me.is_admin?'<span class=lim>∞ cheksiz</span>':(f.left!=null?`<span class=lim>💬 ${f.left} qoldi</span>`:'')}</div>
-<div class=row3><button class=b onclick="foxTalk()">🎙 Gaplashish</button><button class=b onclick="foxStop()">⏹ To'xtatish</button><button class="b ${f.auto?'g':'sel'}" onclick="foxWrite()">✍️ Yozma</button></div>${!me.is_admin&&f.vleft!=null?`<div class=s style="text-align:center">Ovozli suhbat: ${f.vleft} ta qoldi</div>`:''}
+<div class=row3><button class=b onclick="foxDiag()">🔧 Tekshirish</button><button class=b onclick="foxTalk()">🎙 Gaplashish</button><button class=b onclick="foxStop()">⏹ To'xtatish</button><button class="b ${f.auto?'g':'sel'}" onclick="foxWrite()">✍️ Yozma</button></div>${!me.is_admin&&f.vleft!=null?`<div class=s style="text-align:center">Ovozli suhbat: ${f.vleft} ta qoldi</div>`:''}
 <div class=chat id=fch>${f.msgs.map((m,i)=>`<div class="bub ${m.role=='assistant'?'bot':'me'}">${m.role=='assistant'?'<i>🦊</i>':''}<span>${esc(m.content).replace(/\n/g,'<br>')}${m.role=='assistant'?`<button class=sp onclick="foxSpeak(${i})" title="Qayta tinglash">🔊</button><button class=sp onclick="foxStop()" title="To'xtatish">⏹</button><div class=rx>${['👍','❤️','😂','🔥'].map(e=>`<button class="${m.rx==e?'on':''}" onclick="foxRx(${i},'${e}',this)">${e}</button>`).join('')}</div>`:''}</span></div>`).join('')}${f.typing?'<div class="bub bot"><i>🦊</i><span class=dots><s></s><s></s><s></s></span></div>':''}</div>
 <div class=chips>${['Misol keltir','Talaffuzini tushuntir','Meni sina','Grammatika'].map(c=>`<button class=chp onclick="foxSend('${c}')">${c}</button>`).join('')}</div>
 <div class=inp><input id=fin placeholder="Savol yozing..." autocomplete=off onkeydown="if(event.key==='Enter')foxSend()"><button class=mic2 onclick="foxLang()">${f.lang!='uz-UZ'?lgFlag(f.tlc):'🇺🇿'}</button><button class=mic2 onclick="foxMic()">🎤</button><button class=send onclick="foxSend()">➤</button></div></div>`);
@@ -1049,13 +1049,13 @@ function foxSpeak(i,cb){const f=S.fox,tk=f.spk=(f.spk||0)+1;f.speaking=1;stSet('
  const viaG=()=>{if(f.spk!==tk)return;stSet('🔊 Kori gapiryapti (Google ovozi)','speak');f.audio={pause(){try{AUD.pause()}catch{}}};gSpeak(t,go,local)};
  if(!t)return go();
  if(f.noTts&&Date.now()<f.noTts)return viaG();
- (async()=>{try{const r=await api('/fox-tts',{body:{text:t}});if(f.spk!==tk)return;if(!r.a){why=String(r.msg||r.e||'');console.warn('fox-tts:',why);if(me&&me.is_admin&&why&&!f._tw){f._tw=1;try{alert('Kori ovozi (server) ishlamadi: '+why.slice(0,160))}catch{}}throw 0}
+ (async()=>{try{const r=await api('/fox-tts',{body:{text:t}});if(f.spk!==tk)return;if(!r.a){why=String(r.msg||r.e||'');console.warn('fox-tts:',why);if(why&&!f._tw){f._tw=1;try{if(me&&me.is_admin)alert('Kori ovozi (server) ishlamadi: '+why.slice(0,160));else stSet("🔇 Server ovozi ishlamadi, boshqa ovoz sinab ko'riladi",'speak')}catch{}}throw 0}
   try{f.audio&&f.audio.pause()}catch{}
   stSet('🔊 Kori gapiryapti','speak');await playB64(f,r.a,go,()=>{if(!d&&!er){er=1;viaG()}},r.mime);f.ttsFail=0}
  catch(e){if(f.spk!==tk)return;console.warn('fox ovoz:',e);f.ttsFail=(f.ttsFail||0)+1;if(f.ttsFail>=3){f.noTts=Date.now()+60000;f.ttsFail=0}viaG()}})()}
 function foxSpeakLocal(i,cb,tk){const f=S.fox;let d=0,tm;
  const go=()=>{if(d)return;d=1;clearTimeout(tm);if(f.spk!==tk)return;f.speaking=0;spkUi();if(f.talk)stSet('🎙 ovozli suhbat','listen');if(cb)cb()};
- try{if(S.cfg&&S.cfg.onevoice){go();return}const t=f.msgs[i].content.replace(/[*_#`]/g,''),ps=t.split(/([가-힣][가-힣\s]*)/).filter(x=>x.trim());speechSynthesis.cancel();
+ try{if(S.cfg&&S.cfg.onevoice){stSet("🔇 Kori ovozi hozir mavjud emas (server TTS ishlamadi)",'listen');go();return}const t=f.msgs[i].content.replace(/[*_#`]/g,''),ps=t.split(/([가-힣][가-힣\s]*)/).filter(x=>x.trim());speechSynthesis.cancel();
   if(!ps.length)return go();
   const vs=(speechSynthesis.getVoices&&speechSynthesis.getVoices())||[],pk=l=>vs.find(v=>String(v.lang).toLowerCase().replace('_','-').startsWith(l));
   ps.forEach((p,k)=>{const ko=/[가-힣]/.test(p),vo=ko?pk('ko'):pk('uz'),u=new SpeechSynthesisUtterance(ko?p:uzFor(vo,p));u.lang=vo?vo.lang:(ko?'ko-KR':'uz-UZ');if(vo)u.voice=vo;u.rate=.95;if(k==ps.length-1){u.onend=go;u.onerror=go}speechSynthesis.speak(u)});
@@ -1109,9 +1109,19 @@ async function talkSend(b){const f=S.fox;let sp=0;f.typing=1;stSet("🦊 o'ylaya
   if(r.reply){f.msgs.push({role:'assistant',content:r.reply});sp=1;f.typing=0;foxV();foxSpeak(f.msgs.length-1,talkListen);return}
   if(r.e=='limit'){f.msgs.push({role:'assistant',content:"Bugungi savollar limiti tugadi. Obuna bo'lsangiz ko'proq gaplashishingiz mumkin 🦊"});f.talk=0}
   else if(r.e=='nohear'){stSet('🎙 Eshitilmadi, qayta gapiring','listen')}
-  else if(r.e=='api'){f.msgs.push({role:'assistant',content:r.msg?'Xatolik: '+r.msg:"Xatolik bo'ldi, qayta urinib ko'ring."})}
+  else if(r.e=='api'){f.msgs.push({role:'assistant',content:r.msg?'Xatolik: '+r.msg:"Xatolik bo'ldi, qayta urinib ko'ring."});f.talk=0}
+  else if(r.e){f.msgs.push({role:'assistant',content:"Ovozni qabul qilib bo'lmadi ("+String(r.e).slice(0,120)+"). Yozma rejimga o'ting yoki 🔧 Tekshirish tugmasini bosing."});f.talk=0}
  }catch{f.msgs.push({role:'assistant',content:"Aloqa uzildi, qayta urinib ko'ring."})}
  f.typing=0;if(!f.talk)stopTalk();else foxV();if(f.talk&&!sp)setTimeout(talkListen,700)}
+async function foxDiag(){const out=[],add=(ok,t)=>out.push((ok?'✅ ':'❌ ')+t);
+ try{const r=await api('/fox-diag',{body:{}});(r.steps||[]).forEach(x=>add(x.ok,x.n+(x.m?': '+x.m:'')));if(r.e)add(0,'server: '+r.e)}catch{add(0,"Serverga ulanib bo'lmadi")}
+ add(!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia),'mikrofon API (getUserMedia)');
+ try{const st=await getMic();add(1,'mikrofon ruxsati berilgan');st.getTracks().forEach(t=>t.enabled=false)}catch(e){add(0,'mikrofon ruxsati: '+((e&&e.name)||e))}
+ add(!!(window.SpeechRecognition||window.webkitSpeechRecognition),'brauzer ovoz tanishi (zaxira)');
+ add(!!(S.cfg&&S.cfg.voice),'server Gemini ovoz rejimi (GEMINI_API_KEY)');
+ if(S.cfg&&S.cfg.onevoice)add(0,"ONE_VOICE=1 yoqilgan: Gemini ovozi ishlamasa Kori jim qoladi");
+ try{audUnlock();await new Promise(res=>playSrc(SIL,res,res,3000));add(1,'telefon ovozni ijro eta oladi')}catch{add(0,'audio ijro etilmadi')}
+ alert(out.join('\n'))}
 function foxWrite(){const f=S.fox;if(f.talk)stopTalk();f.auto=0;foxStop();foxV();setTimeout(()=>{const i=$('#fin');i&&i.focus()},60)}
 function foxLang(){const f=S.fox;f.lang=f.lang=='uz-UZ'?(((S.langs||[]).find(l=>l.code==f.tlc)||{}).tts||'en-US'):'uz-UZ';foxV()}
 function lgFlag(c){return ((S.langs||[]).find(l=>l.code==c)||{}).flag||'🌐'}
