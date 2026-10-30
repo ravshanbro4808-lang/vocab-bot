@@ -798,6 +798,7 @@ async function geminiVoice(hist,system,audio){
   if(cs.length&&cs[cs.length-1].role==='user')cs[cs.length-1].parts.push(au);else cs.push({role:'user',parts:[au]});
   const cfg=gcfg(FOXM,700,1);cfg.responseMimeType='application/json';
   return geminiRaw(cs,system,cfg)}
+const raceT=(p,ms,msg)=>new Promise((res,rej)=>{const t=setTimeout(()=>rej(new Error(msg)),ms);p.then(v=>{clearTimeout(t);res(v)},e=>{clearTimeout(t);rej(e)})});
 async function aiWords(items,txt,vis,defPos,auto,job){
   const kL=txt.split(/\n/).filter(l=>/[가-힣]/.test(l)).length,good=items.filter(i=>i.uz).length;
   if(job)job.expected=kL;
@@ -812,7 +813,7 @@ async function aiWords(items,txt,vis,defPos,auto,job){
       if(vis.pageList&&vis.pageList.length){for(let i=0;i<vis.pageList.length;i+=8)rgs.push(vis.pageList.slice(i,i+8))}
       else if(vis.mime==='application/pdf'&&vis.pages>8){for(let p=1;p<=vis.pages;p+=8){const g=[];for(let k=p;k<p+8&&k<=vis.pages;k++)g.push(k);rgs.push(g)}}else rgs.push(null);
       let ri=0,dn=0,lastE='';const wv=async()=>{while(ri<rgs.length){const rg=rgs[ri++],pr=wp(job)+(rg?"\n\nFAQAT PDFning quyidagi sahifalaridagi so'zlarni ol (sahifa raqamlari): "+rg.join(', ')+". Har bir sahifani to'liq o'qi, hech bir so'zni tashlab ketma.":"");let okc=0;
-        for(let a=0;a<3&&!okc;a++){try{const w=parseWords(await geminiFile(vis.ref||vis.b64||(vis.b64=vis.buf.toString('base64')),vis.mime,pr,30000));got.push(...w);okc=1}catch(e){lastE=friendlyErr(e&&e.message||e);await new Promise(z=>setTimeout(z,2000))}}
+        for(let a=0;a<3&&!okc;a++){try{if(job)job.stage="AI fayldan so'zlarni qidiryapti (urinish "+(a+1)+"/3)"+(lastE?" · oxirgi xato: "+lastE.slice(0,90):"")+"...";const w=parseWords(await raceT(geminiFile(vis.ref||vis.b64||(vis.b64=vis.buf.toString('base64')),vis.mime,pr,30000),180000,"AI 3 daqiqada javob bermadi"));got.push(...w);okc=1}catch(e){lastE=friendlyErr(e&&e.message||e);console.error('Import AI xato (urinish '+(a+1)+'/3):',String(e&&e.message||e).slice(0,300));await new Promise(z=>setTimeout(z,2000))}}
         if(!okc){failed++;if(job)job.failedPages.push(...(rg||[]))}
         dn++;if(job){job.stage="AI fayldan so'zlarni qidiryapti ("+dn+"/"+rgs.length+")...";rd(job,'AI',dn,rgs.length,got.length,'qism')}}};
       await Promise.all(Array.from({length:Math.min(4,rgs.length)},wv));if(!got.length&&job)job.aiErr=lastE||"AI fayldan so'z topa olmadi"}
