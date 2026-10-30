@@ -6,7 +6,23 @@ let THINK=process.env.GEMINI_THINKING||'low';const FALLBACKS=(process.env.GEMINI
 const FASTM=(process.env.GEMINI_FAST_MODEL||'gemini-3.5-flash-lite').split(',').map(x=>x.trim()).filter(Boolean),down={};
 const markDown=(m,e)=>{const t=String(e&&(e.message||e));down[m]=Date.now()+(/404|not found|no longer/i.test(t)?864e5:/quota|exceed|429/i.test(t)?90000:60000)};
 const chainFor=(first,fast)=>{const all=[...new Set([...(fast?FASTM:[]),first,...FALLBACKS])].filter(Boolean),ok=all.filter(m=>!(down[m]>Date.now()));return ok.length?ok:[first]};
-const friendlyErr=m=>{m=String(m||'');return /quota|exceed|429|rate/i.test(m)?"Gemini kunlik limiti tugadi (bepul tarif). Birozdan keyin urinib ko'ring yoki Google AI Studio'da billing ulang.":/demand|overload|unavailable|503/i.test(m)?"Gemini hozir band. Birozdan keyin urinib ko'ring.":/timeout|aborted|fetch failed/i.test(m)?"Gemini javob bermadi. Qayta urinib ko'ring.":m.slice(0,160)};const USE_GEMINI=!!GEMINI_API_KEY,AI_KEY=GEMINI_API_KEY||ANTHROPIC_API_KEY;
+const friendlyErr=m=>{m=String(m||'');return /quota|exceed|429|rate/i.test(m)?"Gemini kunlik limiti tugadi (bepul tarif). Birozdan keyin urinib ko'ring yoki Google AI Studio'da billing ulang.":/demand|overload|unavailable|503/i.test(m)?"Gemini hozir band. Birozdan keyin urinib ko'ring.":/timeout|aborted|fetch failed/i.test(m)?"Gemini javob bermadi. Qayta urinib ko'ring.":m.slice(0,160)};const USE_GEMINI=!!(GEMINI_API_KEY||process.env.GEMINI_API_KEY2||process.env.GEMINI_API_KEYS),AI_KEY=GEMINI_API_KEY||process.env.GEMINI_API_KEY2||process.env.GEMINI_API_KEYS||ANTHROPIC_API_KEY;
+// ===== Bir nechta Gemini kalit: GEMINI_API_KEY + GEMINI_API_KEY2 (yoki GEMINI_API_KEYS=k1,k2,k3). Navbat bilan ishlatiladi; biri limitga yetsa yoki yaroqsiz bo'lsa keyingisiga o'tadi =====
+const GKEYS=[...new Set([process.env.GEMINI_API_KEY,process.env.GEMINI_API_KEY2,...String(process.env.GEMINI_API_KEYS||'').split(/[,\s]+/)].map(x=>String(x||'').trim()).filter(Boolean))];
+const gCool={};let gRot=0;const _rawFetch=globalThis.fetch;
+globalThis.fetch=async function(u,o){const su=String(u);
+  if(GKEYS.length<2||!su.includes('generativelanguage.googleapis.com'))return _rawFetch(u,o);
+  const b=o&&o.body,plain=b==null||typeof b==='string'||Buffer.isBuffer(b);
+  // fayl yuklash/o'qish kalitga bog'liq: ular doim birinchi kalit bilan ishlaydi
+  if(!plain||/\/upload\/|\/files\b|\/v1beta\/files/.test(su)||(typeof b==='string'&&/file_?[uU]ri/.test(b)))return _rawFetch(u,o);
+  const n=GKEYS.length;let last,lastErr;
+  for(let t=0;t<n;t++){const k=GKEYS[(gRot+t)%n];if((gCool[k]||0)>Date.now()&&t<n-1)continue;
+    let r;try{r=await _rawFetch(su.replace(/([?&]key=)[^&]+/,'$1'+k),{...o,headers:{...((o&&o.headers)||{}),'x-goog-api-key':k}})}catch(e){lastErr=e;continue}
+    if([400,403,429,503].includes(r.status)){let tx='';try{tx=(await r.clone().text()).slice(0,400)}catch{}
+      if(/quota|exceed|RESOURCE_EXHAUSTED|API key not valid|API_KEY_INVALID|PERMISSION_DENIED|rate/i.test(tx)||r.status===429){gCool[k]=Date.now()+(/not valid|INVALID|PERMISSION/i.test(tx)?60:5)*60000;console.warn('Gemini kalit almashtirildi (#'+(GKEYS.indexOf(k)+1)+' holati '+r.status+')');last=r;continue}}
+    gRot=(GKEYS.indexOf(k)+1)%n;return r}
+  if(last)return last;throw lastErr||new Error('gemini kalit yoq')};
+
 const addM=(ts,n)=>{const d=new Date(ts);d.setMonth(d.getMonth()+n);return d.getTime()};const DAY=864e5,PERMS=['dicts','import','tasks','payments','trials','users','plans','methods','admins'];
 process.on('uncaughtException',e=>console.error('uncaught',e));process.on('unhandledRejection',e=>console.error('unhandled',e));
 const MAXW_G=+process.env.MAX_WORDS||2000000;
@@ -596,7 +612,7 @@ async function foxGoogleTts(t){t=t.replace(/\p{Extended_Pictographic}/gu,' ').re
   for(const m of t.matchAll(/([가-힣ㄱ-ㅎㅏ-ㅣ]+(?:[\s,.!?~·]+[가-힣ㄱ-ㅎㅏ-ㅣ]+)*)|([^가-힣ㄱ-ㅎㅏ-ㅣ]+)/g)){const x=m[0].replace(/\s+/g,' ').trim();if(!x||!/[\p{L}\p{N}]/u.test(x))continue;const lang=m[1]?'ko':'uz';
     for(let i=0;i<x.length;i+=170){let e=Math.min(x.length,i+170);if(e<x.length){const sp=x.lastIndexOf(' ',e);if(sp>i+60)e=sp}segs.push([x.slice(i,e).trim(),lang]);i=e-170}}
   if(!segs.length)throw new Error('matn yoq');const bufs=[];for(const [x,l] of segs.slice(0,14))bufs.push(await gTts(x,l));return Buffer.concat(bufs)}
-app.post('/api/fox-tts',async(r,s)=>{const k=foxKey(r.u,'tts'),cap=r.u.is_admin?1e9:active(r.u)?1200:150,errs=[];
+app.post('/api/fox-tts',async(r,s)=>{const k=foxKey(r.u,'tts'),cap=r.u.is_admin?1e9:active(r.u)?400:60,errs=[];
   const t=String(r.body.text||'').replace(/[*_#`]/g,'').trim().slice(0,600);if(!t)return s.json({e:'tts'});
   fs.mkdirSync(DATA+'/audio/cache',{recursive:true});const ck=crypto.createHash('sha1').update(t).digest('hex'),cf=DATA+'/audio/cache/'+ck;
   try{if(fs.existsSync(cf+'.wav'))return s.json({a:fs.readFileSync(cf+'.wav').toString('base64')});if(!ONE_VOICE&&fs.existsSync(cf+'.mp3'))return s.json({a:fs.readFileSync(cf+'.mp3').toString('base64'),mime:'audio/mpeg'})}catch{}
@@ -604,14 +620,6 @@ app.post('/api/fox-tts',async(r,s)=>{const k=foxKey(r.u,'tts'),cap=r.u.is_admin?
   if(ONE_VOICE)return s.json({e:'tts',msg:errs.join(' | ')});
   try{const eb=await edgeLong(t,'');try{fs.writeFileSync(cf+'.mp3',eb)}catch{}return s.json({a:eb.toString('base64'),mime:'audio/mpeg'})}catch(e){errs.push('edge: '+String(e.message||e).slice(0,60));console.error('fox-tts edge xato:',String(e.message||e).slice(0,200))}
   try{s.json({a:(await foxGoogleTts(t)).toString('base64'),mime:'audio/mpeg'})}catch(e){errs.push('google: '+String(e.message||e).slice(0,60));console.error('fox-tts google xato:',errs.join(' | '));s.json({e:'tts',msg:errs.join(' | ')})}});
-app.post('/api/fox-diag',async(r,s)=>{const st=[],add=(n,ok,m)=>st.push({n,ok:!!ok,m:m?String(m).slice(0,140):''});
-  add('GEMINI_API_KEY',USE_GEMINI,USE_GEMINI?'':"o'rnatilmagan: ovoz eshitish ham, Gemini ovozi ham ishlamaydi");add('ONE_VOICE o\'chiq',!ONE_VOICE,ONE_VOICE?"yoqilgan: zaxira ovozlar o'chiq":'');
-  add('ws moduli (Edge ovozi)',!!WSM,WSM?'':'npm i ws kerak');
-  if(USE_GEMINI){try{const t=await callClaude([{role:'user',content:'Salom deb yoz'}],'Qisqa javob ber',60);add('Gemini matn ('+FOXM+')',!!t)}catch(e){add('Gemini matn ('+FOXM+')',0,friendlyErr(e.message||e))}
-    try{const a=await geminiTTSany('Salom');add('Gemini ovoz (TTS)',!!a)}catch(e){add('Gemini ovoz (TTS)',0,friendlyErr(e.message||e))}}
-  try{const b=await edgeLong('Salom','uz');add("Edge ovozi (o'zbekcha)",b&&b.length>500)}catch(e){add("Edge ovozi (o'zbekcha)",0,e.message||e)}
-  try{const b=await foxGoogleTts('Salom');add('Google ovozi',b&&b.length>500)}catch(e){add('Google ovozi',0,e.message||e)}
-  s.json({steps:st})});
 app.post('/api/fox',async(r,s)=>{const k=foxKey(r.u,'chat');if((foxUse[k]||0)>=foxLimit(r.u,'chat'))return s.json({e:'limit',left:0});foxUse[k]=(foxUse[k]||0)+1;
   const ms=(r.body.messages||[]).filter(m=>m&&m.content);const o=await askFox(ms,Array.isArray(r.body.words)?r.body.words:[]);if(o.e==='api')foxUse[k]--;o.left=foxLeft(r.u,'chat');s.json(o)});
 // ===== Misol gap va tahlil ovozi: bir marta yasaladi va keshlanadi (Edge → Gemini → Google) =====
@@ -788,7 +796,7 @@ async function geminiVoice(hist,system,audio){
   while(cs.length&&cs[0].role==='model')cs.shift();
   const au={inlineData:{mimeType:'audio/wav',data:audio.toString('base64')}};
   if(cs.length&&cs[cs.length-1].role==='user')cs[cs.length-1].parts.push(au);else cs.push({role:'user',parts:[au]});
-  const cfg=gcfg(FOXM,700,1);if(cfg.thinkingConfig&&/gemini-3/i.test(FOXM)&&process.env.GEMINI_VOICE_THINK!=='low')cfg.thinkingConfig.thinkingLevel='minimal';cfg.responseMimeType='application/json';
+  const cfg=gcfg(FOXM,700,1);cfg.responseMimeType='application/json';
   return geminiRaw(cs,system,cfg)}
 async function aiWords(items,txt,vis,defPos,auto,job){
   const kL=txt.split(/\n/).filter(l=>/[가-힣]/.test(l)).length,good=items.filter(i=>i.uz).length;
