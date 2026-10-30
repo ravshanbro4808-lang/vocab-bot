@@ -743,7 +743,7 @@ function audUnlock(){if(audOk||AUD._busy)return;try{AUD.src=SIL;const p=AUD.play
 ['click','touchend','pointerup'].forEach(t=>document.addEventListener(t,()=>{if(AUD._pend){const x=AUD._pend;AUD._pend=null;playSrc(x.src,x.end,x.err,x.max);return}audUnlock()},{capture:true,passive:true}));
 function playSrc(src,end,err,maxMs){let d=0,tm=0;AUD._busy=1;AUD._pend=null;const done=f=>{if(d)return;d=1;clearTimeout(tm);AUD._busy=0;AUD.onended=AUD.onerror=null;if(f)f()};tm=setTimeout(()=>done(end),maxMs||25000);AUD.onended=()=>done(end);AUD.onerror=()=>done(err||end);AUD.src=src;const p=AUD.play();
  if(p&&p.then)p.then(()=>{audOk=1}).catch(e=>{if(e&&e.name==='NotAllowedError'){d=1;clearTimeout(tm);AUD._busy=0;AUD.onended=AUD.onerror=null;AUD._pend={src,end,err,max:maxMs};try{stSet('🔈 Ovozni eshitish uchun ekranni bosing','speak')}catch{}}else done(err||end)})}
-function playWord(w,cb){if(!w)return;let once=0;const end=()=>{if(!once){once=1;if(cb)cb()}},sp=()=>speak(w.ko,end,w.lang&&w.lang!='ko'?w.lang:undefined),pa=()=>playSrc('/audio/'+w.audio,end,sp);
+function playWordKo(w,cb){if(!w)return;let once=0;const end=()=>{if(!once){once=1;if(cb)cb()}},sp=()=>speak(w.ko,end,w.lang&&w.lang!='ko'?w.lang:undefined),pa=()=>playSrc('/audio/'+w.audio,end,sp);
  if(w.audio){pa();return}
  if(!w.id||w._vf){sp();return}
  let done=0;const tm=setTimeout(()=>{if(!done){done=1;sp()}},3500);
@@ -754,7 +754,9 @@ function cardSay(w,any,cb){if(!w)return;audUnlock();const t=window._sayT=(window
  const say=async()=>{if(dn||window._sayT!==t)return;dn=1;if(!uz){if(cb)cb();return}try{const c=any?null:cur();if(c&&w.id&&c.id!==w.id)return}catch{}
   let f=w.audio_uz;if(!f&&w.id){try{const r=await api('/word-voice-uz/'+w.id,{body:{}});if(r&&r.audio){f=r.audio;w.audio_uz=f}}catch{}}
   if(window._sayT!==t)return;if(f)playSrc('/audio/'+f,cb||null,()=>uzSay(uz,cb));else uzSay(uz,cb)};
- playWord(w,()=>setTimeout(say,200));setTimeout(say,9000)}
+ playWordKo(w,()=>setTimeout(say,200));setTimeout(say,9000)}
+// har doim: avval chet tilida, ketidan o'zbekcha tarjimasi (hamma mashq va rejimlarda)
+function playWord(w,cb){if(!w)return;cardSay(w,1,cb)}
 function cardSayEx(w){cardSay(w,0,()=>{const t=window._sayT;setTimeout(()=>{if(window._sayT!==t)return;const k=document.querySelector('#exb .exk'),u=document.querySelector('#exb .exu');if(k&&k.textContent.trim())sayKoUz(k.textContent.trim(),u?u.textContent.trim():'',null,window._exL||(w&&w.lang)||'ko')},300)});setTimeout(()=>{},0)}
 function confetti(n=34){const e=['🎉','⭐','✨','🎊','💛','🇰🇷'];for(let i=0;i<n;i++){const s=document.createElement('span');s.className='cf';s.textContent=e[i%e.length];s.style.left=Math.random()*100+'vw';s.style.animationDelay=Math.random()*.7+'s';s.style.fontSize=18+Math.random()*18+'px';document.body.appendChild(s);setTimeout(()=>s.remove(),3600)}}
 // ---------- navigatsiya (bitta "Orqaga" tugma)
@@ -1468,14 +1470,14 @@ async function gramHome(){head('Grammatika','back()');let d;try{d=await gramLoad
  ${pool.map(g=>`<div class="gzi g${g.l}" onclick="nav(gramView,${g.id})"><div><b>${esc(g.p)}</b><small>${esc(g.m)}</small></div><div class=gzx><button class=pill onclick="event.stopPropagation();sayGram(${g.id},this)">🔊</button><span class=glv>${GLV[g.l]||''}</span></div></div>`).join('')||'<p class=s>Topilmadi</p>'}`)}
 function gxCount(id){try{return +localStorage['gx'+id]||0}catch{return 0}}
 function gxBump(id){try{localStorage['gx'+id]=gxCount(id)+2}catch{}}
-async function gramView(id){head('Grammatika','back()');let d;try{d=await gramLoad()}catch{return}const g=d.by[id];if(!g)return back();
+async function gramView(id,quiet){head('Grammatika','back()');let d;try{d=await gramLoad()}catch{return}const g=d.by[id];if(!g)return back();
  const n=g.e.length,c=gxCount(id),ex=n?[g.e[c%n],g.e[(c+1)%n]].filter((x,i,a)=>a.indexOf(x)==i):[];if(n)gxBump(id);
  H(`<div class="gzv g${g.l}"><span class=glv>${GLV[g.l]||''} ${GLVN[g.l]||''} · ${esc(g.c)}</span><h2>${esc(g.p)}</h2><div class=mm>${esc(g.m)}</div><div class=exbt><button class=pill onclick="sayGram(${id},this)">🔊 Grammatikani eshitish</button></div></div>
  <div class=card style="display:block"><b>📍 Qachon va qayerda ishlatiladi?</b><p style="margin:6px 0 0">${esc(g.u)}</p></div>
  <h3 class=sec style="font-size:18px">💬 Misollar</h3><div id=gxl>${ex.length?ex.map(e=>gxRow(e)).join(''):'<p class=s>⏳ Misol gaplar yozilmoqda...</p>'}</div>
- <div class=row><button class=pill onclick="gramView(${id})">🔄 Boshqa misollar</button><button class=pill onclick="gramMore(${id},this)">✨ AI yangi misol</button></div>
+ <div class=row><button class=pill onclick="gramView(${id},1)">🔄 Boshqa misollar</button><button class=pill onclick="gramMore(${id},this)">✨ AI yangi misol</button></div>
  <div class=row><button class=nxt onclick="nav(gramGame,'fill',${id})">✏️ Shu grammatikani mashq qilish</button></div>${gramNavHTML(id)}`);
- if(!n)gramMore(id,null)}
+ if(!n)gramMore(id,null);if(!quiet)setTimeout(()=>{try{if(S.gr&&S.gr.by[id]&&$('#gxl'))sayGram(id,null)}catch{}},350)}
 // ---- grammatikani o'qib berish va birma-bir ko'rib chiqish
 function gramPoolIds(id){let a=gramPool().map(x=>x.id);if(!a.includes(id))a=S.gr.g.map(x=>x.id);return a}
 function gramNavHTML(id){const a=gramPoolIds(id),i=a.indexOf(id),pv=a[(i-1+a.length)%a.length],nx=a[(i+1)%a.length];
