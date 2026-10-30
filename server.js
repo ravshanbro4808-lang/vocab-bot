@@ -633,10 +633,9 @@ async function textAudio(text,gate,lang){lang=(lang&&lang!=='ko'&&LANGM[lang])?l
   fs.mkdirSync(DATA+'/audio/cache',{recursive:true});
   const ck='t_'+crypto.createHash('sha1').update((lang?lang+'|':'')+text).digest('hex');
   for(const x of ['mp3','wav'])if(fs.existsSync(DATA+'/audio/cache/'+ck+'.'+x))return 'cache/'+ck+'.'+x;
-  if(gate)gate();
   let b=null,ext='mp3',le;
   if(!ONE_VOICE)try{b=await edgeLong(text,lang)}catch(e){le=e}
-  if(!b&&USE_GEMINI&&(ONE_VOICE||/[가-힣]/.test(text))&&Date.now()>gemTtsOff){try{b=Buffer.from(await geminiTTSany(text),'base64');ext='wav'}catch(e){le=e;if(/quota|exceed|429|demand|404|not found/i.test(String(e.message)))gemTtsOff=Date.now()+30*60000}}
+  if(!b&&USE_GEMINI&&(ONE_VOICE||/[가-힣]/.test(text))&&Date.now()>gemTtsOff){try{if(gate)gate();b=Buffer.from(await geminiTTSany(text),'base64');ext='wav'}catch(e){le=e;if(/quota|exceed|429|demand|404|not found/i.test(String(e.message)))gemTtsOff=Date.now()+30*60000}}
   if(!b&&!ONE_VOICE){try{b=(lang&&lang!=='uz')?await gLangTts(text,lang):await foxGoogleTts(text);ext='mp3'}catch(e){le=e}}
   if(!b||b.length<500)throw le||new Error('tts bosh');
   fs.writeFileSync(DATA+'/audio/cache/'+ck+'.'+ext,b);return 'cache/'+ck+'.'+ext}
