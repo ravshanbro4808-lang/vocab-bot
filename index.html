@@ -749,12 +749,13 @@ function playWord(w,cb){if(!w)return;let once=0;const end=()=>{if(!once){once=1;
  let done=0;const tm=setTimeout(()=>{if(!done){done=1;sp()}},3500);
  api('/word-voice/'+w.id,{body:{}}).then(r=>{if(r&&r.audio)w.audio=r.audio;else w._vf=1;if(done)return;done=1;clearTimeout(tm);if(w.audio)pa();else sp()}).catch(()=>{w._vf=1;if(!done){done=1;clearTimeout(tm);sp()}})}
 // kartochka: avval koreyscha, ketidan o'zbekcha tarjimasi aytiladi
-function uzSay(t){gSpeak(t,()=>{},()=>speak(t,null,'uz'))}
-function cardSay(w,any){if(!w)return;audUnlock();const t=window._sayT=(window._sayT||0)+1,uz=String(w.uz||'').replace(/⏳.*$/,'').trim().slice(0,120);let dn=0;
- const say=async()=>{if(dn||!uz||window._sayT!==t)return;dn=1;try{const c=any?null:cur();if(c&&w.id&&c.id!==w.id)return}catch{}
+function uzSay(t,cb){gSpeak(t,()=>{if(cb)cb()},()=>speak(t,cb||null,'uz'))}
+function cardSay(w,any,cb){if(!w)return;audUnlock();const t=window._sayT=(window._sayT||0)+1,uz=String(w.uz||'').replace(/⏳.*$/,'').trim().slice(0,120);let dn=0;
+ const say=async()=>{if(dn||window._sayT!==t)return;dn=1;if(!uz){if(cb)cb();return}try{const c=any?null:cur();if(c&&w.id&&c.id!==w.id)return}catch{}
   let f=w.audio_uz;if(!f&&w.id){try{const r=await api('/word-voice-uz/'+w.id,{body:{}});if(r&&r.audio){f=r.audio;w.audio_uz=f}}catch{}}
-  if(window._sayT!==t)return;if(f)playSrc('/audio/'+f,null,()=>uzSay(uz));else uzSay(uz)};
+  if(window._sayT!==t)return;if(f)playSrc('/audio/'+f,cb||null,()=>uzSay(uz,cb));else uzSay(uz,cb)};
  playWord(w,()=>setTimeout(say,200));setTimeout(say,9000)}
+function cardSayEx(w){cardSay(w,0,()=>{const t=window._sayT;setTimeout(()=>{if(window._sayT!==t)return;const k=document.querySelector('#exb .exk'),u=document.querySelector('#exb .exu');if(k&&k.textContent.trim())sayKoUz(k.textContent.trim(),u?u.textContent.trim():'',null,window._exL||(w&&w.lang)||'ko')},300)});setTimeout(()=>{},0)}
 function confetti(n=34){const e=['🎉','⭐','✨','🎊','💛','🇰🇷'];for(let i=0;i<n;i++){const s=document.createElement('span');s.className='cf';s.textContent=e[i%e.length];s.style.left=Math.random()*100+'vw';s.style.animationDelay=Math.random()*.7+'s';s.style.fontSize=18+Math.random()*18+'px';document.body.appendChild(s);setTimeout(()=>s.remove(),3600)}}
 // ---------- navigatsiya (bitta "Orqaga" tugma)
 function head(t,bk){S.bk=bk||null;$('#hd').innerHTML=bk?`<button class=backpill onclick="${bk}">← Orqaga</button><h1 class=pt>${t}</h1>`:''}
@@ -845,7 +846,7 @@ function cardFace(i,side,txt,kind){const p=CPAL[(i+(side=='k'?4:0))%CPAL.length]
  return `<div class="cdf ${side} sk${sk}" style="${sty}"><svg class=bg viewBox="${sh.vb}" preserveAspectRatio="none"><defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100" y2="100"><stop offset="0" stop-color="${mixc(p[0],'w',.38)}"/><stop offset=".45" stop-color="${p[0]}"/><stop offset="1" stop-color="${p[1]}"/></linearGradient>${mk}</defs>${ext}${svg}<g mask="url(#k${id})">${skinG(sk,uid,i)}</g></svg><i class=glr style="-webkit-mask-image:url('${mu}');mask-image:url('${mu}')"></i>${orn(...sh.box)}<div class=ct style="left:${sh.box[0]}%;top:${sh.box[1]}%;width:${sh.box[2]}%;height:${sh.box[3]}%"><b class=tx2>${esc(txt)}</b></div></div>`}
 function cardHTML(r,w){window._cfl=lgFlag(w.lang||'ko');const kind=r.shape,sh=kind=='rect'?{ar:'3/2'}:SH[SHK[r.i%SHK.length]];
  return `<div class=cdw id=cdw style="--ar:${sh.ar}" onclick="cdFlip(this)"><div class=cdi>${cardFace(r.i,'f',w.ko,kind)}${cardFace(r.i,'k',w.uz,kind)}</div></div>`}
-function cdRepeat(){const e=$('#cdw');if(e&&e.classList.contains('on'))cdFlip(e);cardSay(cur())}
+function cdRepeat(){const e=$('#cdw');if(e&&e.classList.contains('on'))cdFlip(e);cardSayEx(cur())}
 function cdFlip(f){if(Date.now()-(window._sw||0)<400||f._fl)return;const i=f.querySelector('.cdi');if(!i)return;const on=f.classList.contains('on'),a=on?180:0,b=on?0:180,m=(a+b)/2;f.classList.toggle('on');
  if(!i.animate)return;f._fl=1;const an=i.animate([{transform:`rotateY(${a}deg) translateZ(0) scale(1)`},{transform:`rotateY(${m}deg) rotateX(-10deg) translateZ(0) scale(.94)`,offset:.5},{transform:`rotateY(${b}deg) translateZ(0) scale(1)`}],{duration:420,easing:'cubic-bezier(.4,.1,.3,1)'});an.onfinish=an.oncancel=()=>{f._fl=0}}
 function fitCd(){document.querySelectorAll('.cdf .ct').forEach(ct=>{const el=ct.firstElementChild;if(!el||!ct.clientWidth)return;
@@ -897,7 +898,7 @@ function step(keep){const r=S.run;head('Mashq','leave()');r.ans=null;if(r.mode==
  if(!w||(r.mode=='life'&&r.lives<=0)){clearInterval(S.ti);if(!r.sent){r.sent=1;api('/score',{body:{points:r.score}}).catch(()=>{});confetti()}return H(`${mas("Zo'r natija! 🎉")}<div class=sticker>🏆 ${r.score}${r.mode=='speed'?' ball':' / '+r.w.length}</div><button class=nxt onclick="leave()">Davom etish ➜</button>`)}
  const pr=r.mode=='speed'?`<div class=sp2><b id=tm>⏱ 60</b><span>⭐ ${r.score}</span></div>`:r.mode=='life'?`<div class=sp2><b>${'❤️'.repeat(r.lives)}${'🖤'.repeat(3-r.lives)}</b><span>⭐ ${r.score}</span></div>`:`<div class=pb><i style="width:${Math.round(r.i/r.w.length*100)}%"></i></div>`;
  const nx=`<div class=navr>${r.i>0?'<button class=bkb onclick="S.run.i--;step()">⬅ Orqaga</button>':''}<button class=nxt onclick="S.run.i++;step()">Keyingi ➜</button></div>`;
- if(r.mode=='cards'){const nx2=`<div class=cdbar>${r.i>0?'<button class=bkb onclick="S.run.i--;step()">⬅</button>':''}<button class=pill onclick="cardSay(cur())">🔊</button><button class=pill onclick="cdRepeat()">🔁</button><button class=nxt onclick="S.run.i++;step()">Keyingi ➜</button></div>`;
+ if(r.mode=='cards'){const nx2=`<div class=cdbar>${r.i>0?'<button class=bkb onclick="S.run.i--;step()">⬅</button>':''}<button class=pill onclick="cardSayEx(cur())">🔊</button><button class=pill onclick="cdRepeat()">🔁</button><button class=nxt onclick="S.run.i++;step()">Keyingi ➜</button></div>`;
   return H(pr+mas(r.shape=='rect'?"Kartani bosing — tarjimasi ochiladi!":"Shaklni bosing — tarjimasi ochiladi!")+cardHTML(r,w)+`<div class=cdinfo>${w.form&&w.form!==w.ko?`<div class=cdform>📝 Matnda: <b>${esc(w.form)}</b> · Oddiy shakli: <b>${esc(w.ko)}</b></div>`:''}${r.i+1} / ${r.w.length} · ${esc(POS[w.pos]||"So'z")} · 👆 bosing · ⬅ ➡ suring</div>${nx2}<div id=exb class=exb></div><div class=row>${lrn(w)}${foxBtn}</div>`),setTimeout(()=>loadEx(w),0)}
 
  if(r.mode=='rev'||r.mode=='mix'){r.dirs=r.dirs||{};if(r.dirs[r.i]===undefined)r.dirs[r.i]=r.mode=='rev'?1:(Math.random()<.5?1:0);const d=r.dirs[r.i],key=d?'ko':'uz',qk=d?'uz':'ko';r.ans=w[key];
@@ -1482,9 +1483,9 @@ function gramNavHTML(id){const a=gramPoolIds(id),i=a.indexOf(id),pv=a[(i-1+a.len
 function gramText(id){const g=S.gr.by[id],d=S.gr,_d=x=>{x=String(x||'').trim();return x&&!/[.!?]$/.test(x)?x+'.':x};
   return [`Grammatika: ${g.p}.`,`Daraja: ${d.lv[g.l]}. Turkum: ${g.c}.`,`Ma'nosi: ${_d(g.m)}`,`Qachon va qayerda ishlatiladi: ${_d(g.u)}`].join(' ')}
 async function sayGram(id,b){if(!S.gr||!S.gr.by[id])return;const t=window._sayT=(window._sayT||0)+1;audUnlock();try{speechSynthesis.cancel()}catch{}
-  const g=S.gr.by[id],parts=[g.p,g.m,g.u].map(x=>String(x||'').trim()).filter(Boolean);let old='';if(b){old=b.textContent;b.disabled=1;b.textContent='⏳'}
-  const urls=await Promise.all(parts.map((p,k)=>srvAudio(p,k==0?(S.gLang||'ko'):'uz')));if(b){b.disabled=0;b.textContent=old}
-  for(let k=0;k<parts.length;k++){if(window._sayT!==t)return;await new Promise(res=>{if(urls[k])playSrc('/audio/'+urls[k],res,()=>speak(parts[k],res,k==0?(S.gLang||'ko'):'uz'));else speak(parts[k],res,k==0?(S.gLang||'ko'):'uz')});await new Promise(z=>setTimeout(z,250))}}
+  const g=S.gr.by[id],_d=x=>{x=String(x||'').trim();return x&&!/[.!?]$/.test(x)?x+'.':x},GL=S.gLang||'ko',PL=[[String(g.p||'').trim(),GL],['Daraja: '+(GLV[g.l]||'')+' '+(GLVN[g.l]||'')+'. Turkum: '+String(g.c||'').trim()+'.','uz'],["Ma'nosi: "+_d(g.m),'uz'],['Qachon va qayerda ishlatiladi: '+_d(g.u),'uz']].filter(x=>x[0]&&!/:\s*$/.test(x[0])),parts=PL.map(x=>x[0]),LG=PL.map(x=>x[1]);let old='';if(b){old=b.textContent;b.disabled=1;b.textContent='⏳'}
+  const urls=await Promise.all(parts.map((p,k)=>srvAudio(p,LG[k])));if(b){b.disabled=0;b.textContent=old}
+  for(let k=0;k<parts.length;k++){if(window._sayT!==t)return;await new Promise(res=>{if(urls[k])playSrc('/audio/'+urls[k],res,()=>speak(parts[k],res,LG[k]));else speak(parts[k],res,LG[k])});await new Promise(z=>setTimeout(z,250))}}
 function gxRow(e){return `<div class=exr><div class=exk>${hl(e[0])}</div><div class=exu>${esc(e[1])}</div><div class=exbt><button class=pill onclick="sayKoUz(${jq(plainKo(e[0]))},${jq(e[1])},this,${jq(S.gLang||'ko')})">🔊 Eshitish</button></div></div>`}
 async function gramMore(id,b){if(b){b.disabled=1;b.textContent='⏳ ...'}const r=await api('/gram/more',{body:{id}}).catch(()=>null);if(b){b.disabled=0;b.textContent='✨ AI yangi misol'}
  const box=$('#gxl');if(!r||!r.ex||!r.ex.length){if(b)alert((r&&r.e)||"Yangi misol topilmadi");else if(box&&S.gr&&S.gr.by[id]&&!S.gr.by[id].e.length)box.innerHTML="<p class=s>Misol topilmadi. «✨ AI yangi misol» tugmasini bosing.</p>";return}
