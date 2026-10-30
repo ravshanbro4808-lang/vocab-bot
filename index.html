@@ -749,10 +749,11 @@ function playWord(w,cb){if(!w)return;let once=0;const end=()=>{if(!once){once=1;
  let done=0;const tm=setTimeout(()=>{if(!done){done=1;sp()}},3500);
  api('/word-voice/'+w.id,{body:{}}).then(r=>{if(r&&r.audio)w.audio=r.audio;else w._vf=1;if(done)return;done=1;clearTimeout(tm);if(w.audio)pa();else sp()}).catch(()=>{w._vf=1;if(!done){done=1;clearTimeout(tm);sp()}})}
 // kartochka: avval koreyscha, ketidan o'zbekcha tarjimasi aytiladi
-function cardSay(w){if(!w)return;audUnlock();const t=window._sayT=(window._sayT||0)+1,uz=String(w.uz||'').replace(/⏳.*$/,'').trim().slice(0,120);let dn=0;
- const say=async()=>{if(dn||!uz||window._sayT!==t)return;dn=1;try{const c=cur();if(c&&w.id&&c.id!==w.id)return}catch{}
+function uzSay(t){gSpeak(t,()=>{},()=>speak(t,null,'uz'))}
+function cardSay(w,any){if(!w)return;audUnlock();const t=window._sayT=(window._sayT||0)+1,uz=String(w.uz||'').replace(/⏳.*$/,'').trim().slice(0,120);let dn=0;
+ const say=async()=>{if(dn||!uz||window._sayT!==t)return;dn=1;try{const c=any?null:cur();if(c&&w.id&&c.id!==w.id)return}catch{}
   let f=w.audio_uz;if(!f&&w.id){try{const r=await api('/word-voice-uz/'+w.id,{body:{}});if(r&&r.audio){f=r.audio;w.audio_uz=f}}catch{}}
-  if(window._sayT!==t)return;if(f)playSrc('/audio/'+f,null,()=>speak(uz,null,'uz'));else speak(uz,null,'uz')};
+  if(window._sayT!==t)return;if(f)playSrc('/audio/'+f,null,()=>uzSay(uz));else uzSay(uz)};
  playWord(w,()=>setTimeout(say,200));setTimeout(say,9000)}
 function confetti(n=34){const e=['🎉','⭐','✨','🎊','💛','🇰🇷'];for(let i=0;i<n;i++){const s=document.createElement('span');s.className='cf';s.textContent=e[i%e.length];s.style.left=Math.random()*100+'vw';s.style.animationDelay=Math.random()*.7+'s';s.style.fontSize=18+Math.random()*18+'px';document.body.appendChild(s);setTimeout(()=>s.remove(),3600)}}
 // ---------- navigatsiya (bitta "Orqaga" tugma)
@@ -857,7 +858,7 @@ function fitCd(){document.querySelectorAll('.cdf .ct').forEach(ct=>{const el=ct.
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{document.querySelectorAll('.cdf .ct').forEach(c=>c._fk='');try{fitCd()}catch{}});
 const WD={};
 const frm=x=>x.form&&x.form!==x.ko?`<br><small class=frm>matnda: ${esc(x.form)}</small>`:'';
-function wrowIn(x){return `<div class=wr id=wr${x.id}><span><b>${esc(x.ko)}</b> <small>${esc(x.uz)}</small>${frm(x)}</span><span><button class=cb onclick="playWord(WD[${x.id}])">🔊</button><button class=cb onclick="wrEx(${x.id})">💬</button>${has('dicts')?`<button class=cb onclick="editWord(${x.id})">✏️</button>`:''}</span></div>`}
+function wrowIn(x){return `<div class=wr id=wr${x.id}><span><b>${esc(x.ko)}</b> <small>${esc(x.uz)}</small>${frm(x)}</span><span><button class=cb onclick="cardSay(WD[${x.id}],1)">🔊</button><button class=cb onclick="wrEx(${x.id})">💬</button>${has('dicts')?`<button class=cb onclick="editWord(${x.id})">✏️</button>`:''}</span></div>`}
 function wrow(x){return wrowIn(x)+`<div id=wre${x.id} class=exb></div>`}
 // so'z ro'yxatida misol gaplarni ochish/yopish; har bir gapda 🔊 Eshitish (koreyscha, keyin o'zbekcha tarjimasi)
 async function wrEx(id){window._exL=((WD[id]||{}).lang)||'ko';const box=$('#wre'+id);if(!box)return;if(box.innerHTML){box.innerHTML='';return}
@@ -892,7 +893,7 @@ function ask1(){const w=cur();nav(foxChat,[w],`«${w.ko}» (${w.uz}) so'zini tus
 const foxBtn='<button class="pill fx" onclick="ask1()">🦊 Tulkidan so\'ra</button>';
 function step(keep){const r=S.run;head('Mashq','leave()');r.ans=null;if(r.mode=='speed'&&r.i>=r.w.length&&Date.now()<r.deadline){r.w=shuf(r.w);r.i=0}
  const w=r.w[r.i];
- if(r.mode=='list')return H(r.w.map(x=>`<div class=card><div><b>${esc(x.ko)}</b><br><small>${esc(x.uz)}</small>${frm(x)}</div><button class=pill onclick="playWord(S.run.w.find(z=>z.id==${x.id}))">🔊</button>${lrn(x)}</div>`).join(''));
+ if(r.mode=='list')return H(r.w.map(x=>`<div class=card><div><b>${esc(x.ko)}</b><br><small>${esc(x.uz)}</small>${frm(x)}</div><button class=pill onclick="cardSay(S.run.w.find(z=>z.id==${x.id}),1)">🔊</button>${lrn(x)}</div>`).join(''));
  if(!w||(r.mode=='life'&&r.lives<=0)){clearInterval(S.ti);if(!r.sent){r.sent=1;api('/score',{body:{points:r.score}}).catch(()=>{});confetti()}return H(`${mas("Zo'r natija! 🎉")}<div class=sticker>🏆 ${r.score}${r.mode=='speed'?' ball':' / '+r.w.length}</div><button class=nxt onclick="leave()">Davom etish ➜</button>`)}
  const pr=r.mode=='speed'?`<div class=sp2><b id=tm>⏱ 60</b><span>⭐ ${r.score}</span></div>`:r.mode=='life'?`<div class=sp2><b>${'❤️'.repeat(r.lives)}${'🖤'.repeat(3-r.lives)}</b><span>⭐ ${r.score}</span></div>`:`<div class=pb><i style="width:${Math.round(r.i/r.w.length*100)}%"></i></div>`;
  const nx=`<div class=navr>${r.i>0?'<button class=bkb onclick="S.run.i--;step()">⬅ Orqaga</button>':''}<button class=nxt onclick="S.run.i++;step()">Keyingi ➜</button></div>`;
@@ -1025,7 +1026,7 @@ function foxChat(words,q){head('Tulki Kori','back()');
  if(!S.fox||words){try{S.fox&&S.fox.st&&S.fox.st.getTracks().forEach(t=>t.enabled=false)}catch{}S.fox={msgs:[{role:'assistant',content:words?"Salom! Men Kori 🦊. Keling, shu so'zlarni mashq qilamiz!":"Assalomu alaykum! Men Kori 🦊 — til lug'atlari yordamchingizman. Menga xohlagan savol bering: so'z, grammatika, talaffuz yoki oddiy suhbat!"}],words:words||[],lang:'uz-UZ',auto:1,tlc:(words&&words[0]&&words[0].lang)||S.lastLang||'en'}}
  foxV();if(q&&words)setTimeout(()=>foxSend(q),100)}
 function foxV(){const f=S.fox;H(`<div class=fxw><div class=fxh><i>🦊</i><div><b>Kori</b><div class=s>${f.typing?'yozmoqda...':f.talk?'<span id=fst>'+esc(f.status||'🎙 ovozli suhbat')+'</span>':f.lite&&me.is_admin?"⚠️ cheklangan rejim: GEMINI_API_KEY qo'shing":f.lite?"lug'at rejimi":'onlayn'}</div></div>${me.is_admin?'<span class=lim>∞ cheksiz</span>':(f.left!=null?`<span class=lim>💬 ${f.left} qoldi</span>`:'')}</div>
-<div class=row3><button class=b onclick="foxDiag()">🔧 Tekshirish</button><button class=b onclick="foxTalk()">🎙 Gaplashish</button><button class=b onclick="foxStop()">⏹ To'xtatish</button><button class="b ${f.auto?'g':'sel'}" onclick="foxWrite()">✍️ Yozma</button></div>${!me.is_admin&&f.vleft!=null?`<div class=s style="text-align:center">Ovozli suhbat: ${f.vleft} ta qoldi</div>`:''}
+<div class=row3><button class=b onclick="foxTalk()">🎙 Gaplashish</button><button class=b onclick="foxStop()">⏹ To'xtatish</button><button class="b ${f.auto?'g':'sel'}" onclick="foxWrite()">✍️ Yozma</button></div>${!me.is_admin&&f.vleft!=null?`<div class=s style="text-align:center">Ovozli suhbat: ${f.vleft} ta qoldi</div>`:''}
 <div class=chat id=fch>${f.msgs.map((m,i)=>`<div class="bub ${m.role=='assistant'?'bot':'me'}">${m.role=='assistant'?'<i>🦊</i>':''}<span>${esc(m.content).replace(/\n/g,'<br>')}${m.role=='assistant'?`<button class=sp onclick="foxSpeak(${i})" title="Qayta tinglash">🔊</button><button class=sp onclick="foxStop()" title="To'xtatish">⏹</button><div class=rx>${['👍','❤️','😂','🔥'].map(e=>`<button class="${m.rx==e?'on':''}" onclick="foxRx(${i},'${e}',this)">${e}</button>`).join('')}</div>`:''}</span></div>`).join('')}${f.typing?'<div class="bub bot"><i>🦊</i><span class=dots><s></s><s></s><s></s></span></div>':''}</div>
 <div class=chips>${['Misol keltir','Talaffuzini tushuntir','Meni sina','Grammatika'].map(c=>`<button class=chp onclick="foxSend('${c}')">${c}</button>`).join('')}</div>
 <div class=inp><input id=fin placeholder="Savol yozing..." autocomplete=off onkeydown="if(event.key==='Enter')foxSend()"><button class=mic2 onclick="foxLang()">${f.lang!='uz-UZ'?lgFlag(f.tlc):'🇺🇿'}</button><button class=mic2 onclick="foxMic()">🎤</button><button class=send onclick="foxSend()">➤</button></div></div>`);
@@ -1042,7 +1043,6 @@ function gSegs(t){t=t.replace(/\p{Extended_Pictographic}/gu,' ').replace(/\uFE0F
  return segs.slice(0,14)}
 function gSpeak(t,end,fail){const segs=gSegs(t);if(!segs.length)return fail();let k=0,any=0;
  const next=()=>{if(k>=segs.length)return end();const [x,l]=segs[k++];const q=encodeURIComponent(x),u1='https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl='+l+'&q='+q,u2='https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl='+l+'&q='+q;playSrc(u1,()=>{any=1;next()},()=>playSrc(u2,()=>{any=1;next()},()=>{if(any)next();else fail()},30000),30000)};next()}
-function foxSplit(t){const a=t.match(/[^.!?。！？\n]+[.!?。！？]*\s*/g)||[t],o=[];let c='';for(const x of a){c+=x;if(c.trim().length>=40){o.push(c.trim());c=''}}if(c.trim()){if(o.length&&c.trim().length<25)o[o.length-1]+=' '+c.trim();else o.push(c.trim())}return o.slice(0,8)}
 function foxSpeak(i,cb){const f=S.fox,tk=f.spk=(f.spk||0)+1;f.speaking=1;stSet('🦊 gapiryapti...','speak');let d=0,er=0,why='';micMute(f,1);
  const t=String(f.msgs[i].content||'').replace(/[*_#`]/g,'').trim();
  const go=()=>{if(d)return;d=1;if(f.spk!==tk)return;f.speaking=0;spkUi();if(f.talk)stSet('🎙 ovozli suhbat','listen');if(cb)cb()};
@@ -1050,22 +1050,13 @@ function foxSpeak(i,cb){const f=S.fox,tk=f.spk=(f.spk||0)+1;f.speaking=1;stSet('
  const viaG=()=>{if(f.spk!==tk)return;stSet('🔊 Kori gapiryapti (Google ovozi)','speak');f.audio={pause(){try{AUD.pause()}catch{}}};gSpeak(t,go,local)};
  if(!t)return go();
  if(f.noTts&&Date.now()<f.noTts)return viaG();
- const parts=foxSplit(t),get=x=>api('/fox-tts',{body:{text:x}});
- const pr=parts.map(get);
- (async()=>{try{
-  for(let k=0;k<parts.length;k++){
-   const r=await pr[k];if(f.spk!==tk)return;
-   if(!r||!r.a){why=String((r&&(r.msg||r.e))||'');console.warn('fox-tts:',why);if(k===0){if(why&&!f._tw){f._tw=1;try{if(me&&me.is_admin)alert('Kori ovozi (server) ishlamadi: '+why.slice(0,160));else stSet("🔇 Server ovozi ishlamadi, boshqa ovoz sinab ko'riladi",'speak')}catch{}}throw 0}else continue}
-   try{f.audio&&f.audio.pause()}catch{}
-   stSet('🔊 Kori gapiryapti','speak');
-   await new Promise(res=>{let ok=0;playB64(f,r.a,()=>{ok=1;res()},()=>{er=1;res()},r.mime)});
-   if(f.spk!==tk)return;
-   if(er&&k===0)throw 0}
-  f.ttsFail=0;go()}
+ (async()=>{try{const r=await api('/fox-tts',{body:{text:t}});if(f.spk!==tk)return;if(!r.a){why=String(r.msg||r.e||'');console.warn('fox-tts:',why);if(me&&me.is_admin&&why&&!f._tw){f._tw=1;try{alert('Kori ovozi (server) ishlamadi: '+why.slice(0,160))}catch{}}throw 0}
+  try{f.audio&&f.audio.pause()}catch{}
+  stSet('🔊 Kori gapiryapti','speak');await playB64(f,r.a,go,()=>{if(!d&&!er){er=1;viaG()}},r.mime);f.ttsFail=0}
  catch(e){if(f.spk!==tk)return;console.warn('fox ovoz:',e);f.ttsFail=(f.ttsFail||0)+1;if(f.ttsFail>=3){f.noTts=Date.now()+60000;f.ttsFail=0}viaG()}})()}
 function foxSpeakLocal(i,cb,tk){const f=S.fox;let d=0,tm;
  const go=()=>{if(d)return;d=1;clearTimeout(tm);if(f.spk!==tk)return;f.speaking=0;spkUi();if(f.talk)stSet('🎙 ovozli suhbat','listen');if(cb)cb()};
- try{if(S.cfg&&S.cfg.onevoice){stSet("🔇 Kori ovozi hozir mavjud emas (server TTS ishlamadi)",'listen');go();return}const t=f.msgs[i].content.replace(/[*_#`]/g,''),ps=t.split(/([가-힣][가-힣\s]*)/).filter(x=>x.trim());speechSynthesis.cancel();
+ try{if(S.cfg&&S.cfg.onevoice){go();return}const t=f.msgs[i].content.replace(/[*_#`]/g,''),ps=t.split(/([가-힣][가-힣\s]*)/).filter(x=>x.trim());speechSynthesis.cancel();
   if(!ps.length)return go();
   const vs=(speechSynthesis.getVoices&&speechSynthesis.getVoices())||[],pk=l=>vs.find(v=>String(v.lang).toLowerCase().replace('_','-').startsWith(l));
   ps.forEach((p,k)=>{const ko=/[가-힣]/.test(p),vo=ko?pk('ko'):pk('uz'),u=new SpeechSynthesisUtterance(ko?p:uzFor(vo,p));u.lang=vo?vo.lang:(ko?'ko-KR':'uz-UZ');if(vo)u.voice=vo;u.rate=.95;if(k==ps.length-1){u.onend=go;u.onerror=go}speechSynthesis.speak(u)});
@@ -1082,7 +1073,7 @@ function vcOpen(){if($('#vc'))return;const d=document.createElement('div');d.id=
 function vcSync(){const f=S.fox,u=$('#vcu'),a=$('#vcf');if(!f||!u||!a)return;let lu='',la='';for(let i=f.msgs.length-1;i>=0&&(!lu||!la);i--){const m=f.msgs[i];if(m.role=='user'){if(!lu)lu=m.content}else if(!la)la=m.content}
  u.textContent=lu?'«'+lu+'»':'';a.textContent=la}
 function vcMute(){const f=S.fox;if(!f)return;f.muted=!f.muted;const b=$('#vmu');if(b){b.classList.toggle('off',!!f.muted);b.textContent=f.muted?'🔇':'🎙'}
- if(f.muted){if(f.rec&&f.sendNow)f.sendNow();else if(f.cur)f.cur();if(f.rec||f.typing||f.speaking)f.endAfter=1;stSet('','mute')}else{f.endAfter=0;stSet('','listen');if(f.rec&&f.cur)f.cur();try{f.ac&&f.ac.resume()}catch{}setTimeout(talkListen,50)}}
+ if(f.muted){if(f.rec&&f.sendNow)f.sendNow();else if(f.cur)f.cur();if(f.rec||f.typing||f.speaking)f.endAfter=1;stSet('','mute')}else{f.endAfter=0;stSet('','listen');talkListen()}}
 function vcTap(){const f=S.fox;if(f&&f.speaking){f.spk=(f.spk||0)+1;f.speaking=0;try{speechSynthesis.cancel()}catch{}stSet('','listen');talkListen()}}
 function wav16(ch,sr){let n=0;ch.forEach(c=>n+=c.length);const a=new Float32Array(n);let o=0;ch.forEach(c=>{a.set(c,o);o+=c.length});
  const r=sr/16000,m=Math.floor(n/r),d=new DataView(new ArrayBuffer(44+m*2)),w=(p,t)=>{for(let i=0;i<t.length;i++)d.setUint8(p+i,t.charCodeAt(i))};
@@ -1103,15 +1094,15 @@ async function talkListen(){const f=S.fox;if(f&&f.talk&&f.endAfter&&!f.typing&&!
   try{x.start()}catch{f.rec=0}return}
  try{if(f.st&&!f.st.getTracks().some(t=>t.readyState==='live'))f.st=null;f.st=await getMic();micMute(f,0)}catch{stopTalk();return alert("Mikrofonga ruxsat berilmadi. Telefon sozlamalarida Telegram uchun mikrofonni yoqing.")}
  const AC=window.AudioContext||window.webkitAudioContext,ac=f.ac=f.ac||new AC();try{await ac.resume()}catch{}
- if(!f.talk||f.rec||f.muted||f.typing||f.speaking)return;micMute(f,0);
+ if(!f.talk||f.rec)return;
  const src=ac.createMediaStreamSource(f.st),pr=ac.createScriptProcessor(4096,1,1),g=ac.createGain(),ch=[];g.gain.value=0;
  let vc=0,talked=0,done=0,t0=Date.now(),last=t0;f.rec=1;stSet('🎙 Tinglayapman...','listen');
  const fin=send=>{if(done)return;done=1;f.rec=0;f.cur=null;f.sendNow=null;pr.onaudioprocess=null;try{pr.disconnect();src.disconnect();g.disconnect()}catch{}
   if(send){micMute(f,1);talkSend(wav16(ch,ac.sampleRate))}else if(f.talk)setTimeout(talkListen,300)};
  pr.onaudioprocess=e=>{if(done)return;const x=new Float32Array(e.inputBuffer.getChannelData(0));ch.push(x);let s=0;for(let i=0;i<x.length;i++)s+=x[i]*x[i];const n=Date.now();
   const rm=Math.sqrt(s/x.length),v0=$('#vc');if(v0)v0.style.setProperty('--lv',Math.min(1,rm*10));if(rm>.02){vc++;talked=1;last=n}
-  if(!f.talk||!$('#fch'))fin(0);else if(talked&&(n-last>800||n-t0>30000))fin(vc>=4);else if(!talked&&n-t0>12000)fin(0)};
- f.cur=()=>fin(0);f.sendNow=()=>fin(vc>=2);src.connect(pr);pr.connect(g);g.connect(ac.destination)}
+  if(!f.talk||!$('#fch'))fin(0);else if(talked&&(n-last>1300||n-t0>30000))fin(vc>=4);else if(!talked&&n-t0>12000)fin(0)};
+ f.cur=()=>fin(0);f.sendNow=()=>fin(vc>=4);src.connect(pr);pr.connect(g);g.connect(ac.destination)}
 async function talkSend(b){const f=S.fox;let sp=0;f.typing=1;stSet("🦊 o'ylayapti...",'think');foxV();
  try{const fd=new FormData();fd.append('audio',b,'v.wav');fd.append('messages',JSON.stringify(f.msgs.slice(-10)));fd.append('words',JSON.stringify(f.words.slice(0,20).map(w=>({ko:w.ko,uz:w.uz}))));
   const r=await api('/fox-voice',{body:fd});if(r.left!=null)f.vleft=r.left;
@@ -1119,19 +1110,9 @@ async function talkSend(b){const f=S.fox;let sp=0;f.typing=1;stSet("🦊 o'ylaya
   if(r.reply){f.msgs.push({role:'assistant',content:r.reply});sp=1;f.typing=0;foxV();foxSpeak(f.msgs.length-1,talkListen);return}
   if(r.e=='limit'){f.msgs.push({role:'assistant',content:"Bugungi savollar limiti tugadi. Obuna bo'lsangiz ko'proq gaplashishingiz mumkin 🦊"});f.talk=0}
   else if(r.e=='nohear'){stSet('🎙 Eshitilmadi, qayta gapiring','listen')}
-  else if(r.e=='api'){f.msgs.push({role:'assistant',content:r.msg?'Xatolik: '+r.msg:"Xatolik bo'ldi, qayta urinib ko'ring."});f.talk=0}
-  else if(r.e){f.msgs.push({role:'assistant',content:"Ovozni qabul qilib bo'lmadi ("+String(r.e).slice(0,120)+"). Yozma rejimga o'ting yoki 🔧 Tekshirish tugmasini bosing."});f.talk=0}
+  else if(r.e=='api'){f.msgs.push({role:'assistant',content:r.msg?'Xatolik: '+r.msg:"Xatolik bo'ldi, qayta urinib ko'ring."})}
  }catch{f.msgs.push({role:'assistant',content:"Aloqa uzildi, qayta urinib ko'ring."})}
- f.typing=0;if(!f.talk)stopTalk();else foxV();if(f.talk&&!sp){if(f.endAfter)stopTalk();else setTimeout(talkListen,700)}}
-async function foxDiag(){const out=[],add=(ok,t)=>out.push((ok?'✅ ':'❌ ')+t);
- try{const r=await api('/fox-diag',{body:{}});(r.steps||[]).forEach(x=>add(x.ok,x.n+(x.m?': '+x.m:'')));if(r.e)add(0,'server: '+r.e)}catch{add(0,"Serverga ulanib bo'lmadi")}
- add(!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia),'mikrofon API (getUserMedia)');
- try{const st=await getMic();add(1,'mikrofon ruxsati berilgan');st.getTracks().forEach(t=>t.enabled=false)}catch(e){add(0,'mikrofon ruxsati: '+((e&&e.name)||e))}
- add(!!(window.SpeechRecognition||window.webkitSpeechRecognition),'brauzer ovoz tanishi (zaxira)');
- add(!!(S.cfg&&S.cfg.voice),'server Gemini ovoz rejimi (GEMINI_API_KEY)');
- if(S.cfg&&S.cfg.onevoice)add(0,"ONE_VOICE=1 yoqilgan: Gemini ovozi ishlamasa Kori jim qoladi");
- try{audUnlock();await new Promise(res=>playSrc(SIL,res,res,3000));add(1,'telefon ovozni ijro eta oladi')}catch{add(0,'audio ijro etilmadi')}
- alert(out.join('\n'))}
+ f.typing=0;if(!f.talk)stopTalk();else foxV();if(f.talk&&!sp)setTimeout(talkListen,700)}
 function foxWrite(){const f=S.fox;if(f.talk)stopTalk();f.auto=0;foxStop();foxV();setTimeout(()=>{const i=$('#fin');i&&i.focus()},60)}
 function foxLang(){const f=S.fox;f.lang=f.lang=='uz-UZ'?(((S.langs||[]).find(l=>l.code==f.tlc)||{}).tts||'en-US'):'uz-UZ';foxV()}
 function lgFlag(c){return ((S.langs||[]).find(l=>l.code==c)||{}).flag||'🌐'}
@@ -1305,9 +1286,9 @@ function watchJob(id){document.getElementById('ov')?.remove();const o=document.c
  let miss=0;const tick=async()=>{let j;try{j=await api('/admin/job/'+id)}catch{if(++miss>40||!document.getElementById('ov'))return;return setTimeout(tick,3000)}if(!document.getElementById('ov'))return;
   if(j&&(j.code>=502&&j.code<=504||/HTTP 50\d/.test(j.e||''))){$('#jst').textContent="Server band yoki qayta ishga tushmoqda, kutilmoqda...";return setTimeout(tick,4000)}
   if(!j||j.stage===undefined){if(++miss<=10){$('#jst').textContent="Server javobi kutilmoqda...";return setTimeout(tick,3000)}document.getElementById('ov').remove();return alert('Ish topilmadi (server qayta ishga tushgan bo\'lishi mumkin): '+JSON.stringify(j))}
-  const rd=j.rd||{},nf=n=>Number(n||0).toLocaleString('ru-RU'),pr=j.total>0||j.fin?100:(rd.pct||0),ad=j.total?Math.min(100,Math.round(j.done/j.total*100)):(j.fin?100:0),all=j.fin?100:Math.max(2,Math.round(pr*.5+ad*.5));
+  const rd=j.rd||{},nf=n=>Number(n||0).toLocaleString('ru-RU'),pr=j.total>0||j.fin?100:(rd.est!=null?rd.est:(rd.pct||0)),ad=j.total?Math.min(100,Math.round(j.done/j.total*100)):(j.fin?100:0),all=j.fin?100:Math.max(2,Math.round(pr*.5+ad*.5));
   $('#jst').textContent=j.stage;$('#jbar').style.width=all+'%';$('#jtx').style.whiteSpace='pre-line';
-  $('#jtx').textContent=`📊 Jami: ${all}%\n📄 Fayldan o'qish: ${pr}%`+(rd.tot&&!(j.total>0)?` (${nf(rd.cur)} / ${nf(rd.tot)}${rd.unit?' '+rd.unit:''})`:'')+` · topilgan so'zlar: ${nf(rd.words||j.found||0)}`+(j.total>0?`\n🔤 So'zlarni qo'shish: ${ad}% (${nf(j.done)} / ${nf(j.total)} so'z) · ${nf(j.added)} ta qo'shildi`:'')+((j.warn||[]).length?'\n⚠️ '+j.warn[j.warn.length-1]:'');
+  $('#jtx').textContent=`📊 Jami: ${all}%\n📄 Fayldan o'qish: ${rd.live&&!(j.total>0)&&!j.fin?'~':''}${pr}%`+(rd.tot&&!(j.total>0)?` (${nf(rd.cur)} / ${nf(rd.tot)}${rd.unit?' '+rd.unit:''})`:'')+` · topilgan so'zlar: ${nf(rd.words||j.found||0)}`+(rd.el&&!(j.total>0)?` · ⏱ ${rd.el} s`:'')+(j.total>0?`\n🔤 So'zlarni qo'shish: ${ad}% (${nf(j.done)} / ${nf(j.total)} so'z) · ${nf(j.added)} ta qo'shildi`:'')+((j.warn||[]).length?'\n⚠️ '+j.warn[j.warn.length-1]:'');
   if(j.fin){document.getElementById('ov').remove();if(j.err)alert('Xatolik: '+j.err);else{confetti();alert((j.dict_id?'Kitob yaratildi.\n':'')+impMsg(j))}vAdmin();return}
   setTimeout(tick,1200)};tick()}
 function upProg(p,c,t){let o=document.getElementById('ov');if(!o){o=document.createElement('div');o.id='ov';o.innerHTML=`<div class=bg></div><div class=sh><h2 style="margin:0 0 6px">⬆️ Fayl yuklanmoqda</h2><div class=s id=jst></div><div class=pb><i id=jbar style="width:1%"></i></div><div class=s>Oynani yopmang, yuklash tugaguncha kuting.</div></div>`;document.body.appendChild(o)}$('#jst').textContent=Math.round(p*100)+'%'+(t?' · '+(c/1048576).toFixed(0)+' / '+(t/1048576).toFixed(0)+' MB':'');$('#jbar').style.width=Math.max(1,Math.round(p*100))+'%'}
@@ -1420,7 +1401,7 @@ async function srvAudio(text,lang){text=String(text).replace(/[{}]/g,'');lang=la
 function sayKoUz(ko,uz,b,lang){lang=lang||'ko';const t=window._sayT=(window._sayT||0)+1;audUnlock();try{speechSynthesis.cancel()}catch{}
   let old='';if(b){old=b.textContent;b.disabled=1;b.textContent='⏳'}const rel=()=>{if(b){b.disabled=0;b.textContent=old}};
   const pu=uz?srvAudio(uz,'uz'):Promise.resolve(null);
-  const second=async()=>{if(window._sayT!==t||!uz)return;const f=await pu;if(window._sayT!==t)return;if(f)playSrc('/audio/'+f,null,()=>speak(uz,null,'uz'));else speak(uz,null,'uz')};
+  const second=async()=>{if(window._sayT!==t||!uz)return;const f=await pu;if(window._sayT!==t)return;if(f)playSrc('/audio/'+f,null,()=>uzSay(uz));else uzSay(uz)};
   srvAudio(ko,lang).then(a=>{rel();if(window._sayT!==t)return;if(a)playSrc('/audio/'+a,()=>setTimeout(second,250),()=>speak(ko,second,lang));else speak(ko,second,lang)})}
 const jq=v=>esc(JSON.stringify(v)).replace(/'/g,'&#39;');
 function exHTML(e,wid){return `<div class=exr><div class=exk>${esc(e.ko)}</div><div class=exu>${esc(e.uz)}</div><div class=exbt><button class=pill onclick="sayKoUz(${jq(e.ko)},${jq(e.uz)},this,${jq(window._exL||'ko')})">🔊 Eshitish</button><button class=pill onclick="exTahlil(this,${jq(e.ko)})">🔍 Tahlil</button><button class=pill onclick="exShow(${wid},1)">🔄 Boshqa misol</button></div></div><div id=exan class=exan></div>`}

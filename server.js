@@ -576,6 +576,7 @@ app.post('/api/word-voice/:id',async(r,s)=>{const w=one('select id,ko,lang,audio
     s.json({audio:await p})}catch(e){s.json({e:'tts'})}});
 async function wordAudioUz(text){text=String(text).replace(/⏳.*$/,'').trim().slice(0,120);if(!text)throw new Error('bosh');if(ONE_VOICE){if(!USE_GEMINI)throw new Error('ovoz yoq');return {b:Buffer.from(await geminiTTSany(text),'base64'),ext:'wav'}}
   try{return {b:await edgeLong(text,''),ext:'mp3'}}catch{}
+  if(USE_GEMINI&&Date.now()>gemTtsOff){try{return {b:Buffer.from(await geminiTTSany(text),'base64'),ext:'wav'}}catch(e){if(/quota|exceed|429|demand|404|not found/i.test(String(e.message||e)))gemTtsOff=Date.now()+30*60000}}
   const r=await fetch('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=uz&q='+encodeURIComponent(text),{headers:{'user-agent':'Mozilla/5.0'},signal:AbortSignal.timeout(10000)});if(!r.ok)throw new Error('tts '+r.status);const b=Buffer.from(await r.arrayBuffer());if(b.length<500)throw new Error('tts bosh');return {b,ext:'mp3'}}
 const uzBusy=new Map();
 app.post('/api/word-voice-uz/:id',async(r,s)=>{const w=one('select id,uz,audio_uz from words where id=?',r.params.id);if(!w||!w.uz||w.uz===PENDING)return s.json({e:'yoq'});if(w.audio_uz)return s.json({audio:w.audio_uz});
@@ -782,14 +783,23 @@ function parseWords(t){const out=[],add=o=>{if(o&&o.ko&&(o.lang||/[가-힣]/.tes
 function gcfg(model,max,fast){const c={maxOutputTokens:max};if(/gemini-3/i.test(model)){c.thinkingConfig={thinkingLevel:fast?THINK:'low'};c.maxOutputTokens=max+(fast?400:1500)}else if(/gemini-2\.5-flash/i.test(model))c.thinkingConfig={thinkingBudget:0};return c}
 async function geminiRaw(contents,system,cfg,n=0,mdl){const base=mdl||FOXM;let le;for(const m of (n>=2?[base]:chainFor(base,(cfg.maxOutputTokens||0)<=1500))){const c2=Object.assign({},cfg);if(m!==base)c2.thinkingConfig=/gemini-3/i.test(m)?{thinkingLevel:'low'}:{thinkingBudget:0};
   try{return await geminiRaw0(contents,system,c2,2,m)}catch(e){le=e;if(!BUSY.test(String(e&&(e.message||e.name))))throw e;markDown(m,e)}}throw le}
+async function geminiStreamCall(body,model,onT){
+  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':streamGenerateContent?alt=sse',{method:'POST',signal:AbortSignal.timeout(300000),headers:{'content-type':'application/json','x-goog-api-key':GEMINI_API_KEY},body:JSON.stringify(body)});
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error((j.error&&j.error.message)||'api '+r.status)}
+  const dec=new TextDecoder();let buf='',txt='';
+  const eat=line=>{line=line.trim();if(!line.startsWith('data:'))return;try{const j=JSON.parse(line.slice(5)),c=j.candidates&&j.candidates[0];if(c&&c.content&&c.content.parts){txt+=c.content.parts.map(x=>x.text||'').join('');try{onT(txt)}catch{}}}catch{}};
+  for await(const ch of r.body){buf+=dec.decode(ch,{stream:true});let i;while((i=buf.indexOf('\n'))>=0){eat(buf.slice(0,i));buf=buf.slice(i+1)}}
+  eat(buf);txt=txt.trim();if(!txt)throw new Error("Gemini bo'sh javob qaytardi");return txt}
 async function geminiRaw0(contents,system,cfg,n=0,mdl){
+  const onT=cfg&&cfg._on;if(onT){cfg=Object.assign({},cfg);delete cfg._on}
   const body={contents,generationConfig:cfg};if(system)body.systemInstruction={parts:[{text:system}]};
+  if(onT)return geminiStreamCall(body,mdl||FOXM,onT);
   const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(mdl||FOXM)+':generateContent',{method:'POST',signal:AbortSignal.timeout(cfg.maxOutputTokens<=1500?30000:300000),headers:{'content-type':'application/json','x-goog-api-key':GEMINI_API_KEY},body:JSON.stringify(body)});
   const j=await r.json().catch(()=>({}));
   if(!r.ok){const em=(j.error&&j.error.message)||'api '+r.status;if(/thinking level/i.test(em)&&cfg.thinkingConfig&&cfg.thinkingConfig.thinkingLevel!=='low'){THINK='low';cfg.thinkingConfig.thinkingLevel='low';return geminiRaw(contents,system,cfg)}if(n===0&&r.status===503){await new Promise(z=>setTimeout(z,1500));return geminiRaw0(contents,system,cfg,1,mdl)}throw new Error(em)}
   const c=j.candidates&&j.candidates[0];const t=c&&c.content?(c.content.parts||[]).map(x=>x.text||'').join('').trim():'';
   if(!t)throw new Error("Gemini bo'sh javob qaytardi");return t}
-const geminiFile=(src,mime,prompt,max)=>geminiRaw([{role:'user',parts:[src&&src.uri?{fileData:{mimeType:src.mimeType||mime,fileUri:src.uri}}:{inlineData:{mimeType:mime,data:typeof src==='string'?src:src.toString('base64')}},{text:prompt}]}],'',gcfg(FOXM,max));
+const geminiFile=(src,mime,prompt,max,onT)=>geminiRaw([{role:'user',parts:[src&&src.uri?{fileData:{mimeType:src.mimeType||mime,fileUri:src.uri}}:{inlineData:{mimeType:mime,data:typeof src==='string'?src:src.toString('base64')}},{text:prompt}]}],'',onT?Object.assign(gcfg(FOXM,max),{_on:onT}):gcfg(FOXM,max));
 async function geminiVoice(hist,system,audio){
   const cs=[];for(const m of (hist||[]).slice(-10)){const role=m.role==='assistant'?'model':'user',text=String(m.content||'').slice(0,1500);if(!text)continue;
     if(cs.length&&cs[cs.length-1].role===role)cs[cs.length-1].parts[0].text+='\n'+text;else cs.push({role,parts:[{text}]})}
@@ -812,11 +822,12 @@ async function aiWords(items,txt,vis,defPos,auto,job){
       const rgs=[];
       if(vis.pageList&&vis.pageList.length){for(let i=0;i<vis.pageList.length;i+=8)rgs.push(vis.pageList.slice(i,i+8))}
       else if(vis.mime==='application/pdf'&&vis.pages>8){for(let p=1;p<=vis.pages;p+=8){const g=[];for(let k=p;k<p+8&&k<=vis.pages;k++)g.push(k);rgs.push(g)}}else rgs.push(null);
-      let ri=0,dn=0,lastE='';const wv=async()=>{while(ri<rgs.length){const rg=rgs[ri++],pr=wp(job)+(rg?"\n\nFAQAT PDFning quyidagi sahifalaridagi so'zlarni ol (sahifa raqamlari): "+rg.join(', ')+". Har bir sahifani to'liq o'qi, hech bir so'zni tashlab ketma.":"");let okc=0;
-        for(let a=0;a<3&&!okc;a++){try{if(job)job.stage="AI fayldan so'zlarni qidiryapti (urinish "+(a+1)+"/3)"+(lastE?" · oxirgi xato: "+lastE.slice(0,90):"")+"...";const w=parseWords(await raceT(geminiFile(vis.ref||vis.b64||(vis.b64=vis.buf.toString('base64')),vis.mime,pr,30000),180000,"AI 3 daqiqada javob bermadi"));got.push(...w);okc=1}catch(e){lastE=friendlyErr(e&&e.message||e);console.error('Import AI xato (urinish '+(a+1)+'/3):',String(e&&e.message||e).slice(0,300));await new Promise(z=>setTimeout(z,2000))}}
+      let ri=0,dn=0,lastE='';const t0=Date.now(),live={},pst={};const upd=()=>{if(!job)return;const now=Date.now();let fr=0;for(const k in pst)fr+=Math.min(.9,(now-pst[k])/90000);const inf=Object.values(live).reduce((x,y)=>x+y,0);job.rd={ph:'AI',cur:dn,tot:rgs.length,unit:'qism',pct:Math.round(dn/rgs.length*100),est:Math.min(99,Math.round((dn+fr)/rgs.length*100)),words:got.length+inf,live:1,el:Math.round((now-t0)/1000)}};const tk=setInterval(upd,800);
+      const wv=async()=>{while(ri<rgs.length){const my=ri,rg=rgs[ri++],pr=wp(job)+(rg?"\n\nFAQAT PDFning quyidagi sahifalaridagi so'zlarni ol (sahifa raqamlari): "+rg.join(', ')+". Har bir sahifani to'liq o'qi, hech bir so'zni tashlab ketma.":"");let okc=0;
+        for(let a=0;a<3&&!okc;a++){try{if(job)job.stage="AI fayldan so'zlarni qidiryapti (urinish "+(a+1)+"/3)"+(lastE?" · oxirgi xato: "+lastE.slice(0,90):"")+"...";pst[my]=Date.now();live[my]=0;const w=parseWords(await raceT(geminiFile(vis.ref||vis.b64||(vis.b64=vis.buf.toString('base64')),vis.mime,pr,30000,t=>{live[my]=(t.match(/\{[^{}]*\}/g)||[]).length}),180000,"AI 3 daqiqada javob bermadi"));got.push(...w);okc=1}catch(e){lastE=friendlyErr(e&&e.message||e);console.error('Import AI xato (urinish '+(a+1)+'/3):',String(e&&e.message||e).slice(0,300));await new Promise(z=>setTimeout(z,2000))}}
         if(!okc){failed++;if(job)job.failedPages.push(...(rg||[]))}
-        dn++;if(job){job.stage="AI fayldan so'zlarni qidiryapti ("+dn+"/"+rgs.length+")...";rd(job,'AI',dn,rgs.length,got.length,'qism')}}};
-      await Promise.all(Array.from({length:Math.min(4,rgs.length)},wv));if(!got.length&&job)job.aiErr=lastE||"AI fayldan so'z topa olmadi"}
+        delete pst[my];delete live[my];dn++;if(job){job.stage="AI fayldan so'zlarni qidiryapti ("+dn+"/"+rgs.length+")...";upd()}}};
+      try{await Promise.all(Array.from({length:Math.min(4,rgs.length)},wv))}finally{clearInterval(tk)}if(!got.length&&job)job.aiErr=lastE||"AI fayldan so'z topa olmadi"}
     else{const cs=[];for(let i=0;i<txt.length&&i<20000000;i+=8000){let e=Math.min(txt.length,i+8000);const nl=txt.indexOf('\n',e);if(nl>0&&nl-e<400)e=nl;cs.push(txt.slice(i,e));i=e-8000}
       if(txt.length>20000000&&job)job.warn.push("Fayl juda katta: faqat dastlabki 20 000 000 belgi qayta ishlandi.");
       let ci=0,dn=0;const bad=[];
